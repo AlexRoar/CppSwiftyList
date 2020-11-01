@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "SwiftyList::swapPhysicOnly(unsigned long, unsigned long):SwiftyList.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "storage[1]">
+            </PersistentString>
+            <PersistentString
+               value = "storage[2]">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "SwiftyList::print():SwiftyList.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "SwiftyList::insertAside(int):SwiftyList.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "SwiftyList::resize(unsigned long):SwiftyList.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "main:main.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "SwiftyList::swapPhysic(unsigned long, unsigned long):SwiftyList.cpp">
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>

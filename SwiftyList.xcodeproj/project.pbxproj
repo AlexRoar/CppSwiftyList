@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		A0714C95254C06E900FA1BE4 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A0714C94254C06E900FA1BE4 /* main.cpp */; };
+		A0714CA0254C07E200FA1BE4 /* SwiftyList.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A0714C9E254C07E200FA1BE4 /* SwiftyList.cpp */; };
+		A0714CA6254DC0DA00FA1BE4 /* GraphVizDumper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A0714CA4254DC0DA00FA1BE4 /* GraphVizDumper.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -23,8 +25,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A0654131254EC7A7001902DE /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		A0714C91254C06E900FA1BE4 /* SwiftyList */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SwiftyList; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0714C94254C06E900FA1BE4 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		A0714C9E254C07E200FA1BE4 /* SwiftyList.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SwiftyList.cpp; sourceTree = "<group>"; };
+		A0714C9F254C07E200FA1BE4 /* SwiftyList.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SwiftyList.hpp; sourceTree = "<group>"; };
+		A0714CA4254DC0DA00FA1BE4 /* GraphVizDumper.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = GraphVizDumper.cpp; path = SwiftyList/Logging/GraphVizDumper.cpp; sourceTree = SOURCE_ROOT; };
+		A0714CA5254DC0DA00FA1BE4 /* GraphVizDumper.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = GraphVizDumper.hpp; sourceTree = "<group>"; };
+		A0714CA8254DC8C300FA1BE4 /* gr.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = gr.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +49,8 @@
 		A0714C88254C06E900FA1BE4 = {
 			isa = PBXGroup;
 			children = (
+				A0654131254EC7A7001902DE /* CMakeLists.txt */,
+				A0714C9C254C071C00FA1BE4 /* Examples */,
 				A0714C93254C06E900FA1BE4 /* SwiftyList */,
 				A0714C92254C06E900FA1BE4 /* Products */,
 			);
@@ -57,9 +67,29 @@
 		A0714C93254C06E900FA1BE4 /* SwiftyList */ = {
 			isa = PBXGroup;
 			children = (
-				A0714C94254C06E900FA1BE4 /* main.cpp */,
+				A0714CA2254C097A00FA1BE4 /* Logging */,
+				A0714C9E254C07E200FA1BE4 /* SwiftyList.cpp */,
+				A0714C9F254C07E200FA1BE4 /* SwiftyList.hpp */,
 			);
 			path = SwiftyList;
+			sourceTree = "<group>";
+		};
+		A0714C9C254C071C00FA1BE4 /* Examples */ = {
+			isa = PBXGroup;
+			children = (
+				A0714C94254C06E900FA1BE4 /* main.cpp */,
+				A0714CA8254DC8C300FA1BE4 /* gr.png */,
+			);
+			path = Examples;
+			sourceTree = "<group>";
+		};
+		A0714CA2254C097A00FA1BE4 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				A0714CA4254DC0DA00FA1BE4 /* GraphVizDumper.cpp */,
+				A0714CA5254DC0DA00FA1BE4 /* GraphVizDumper.hpp */,
+			);
+			path = Logging;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -119,6 +149,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A0714C95254C06E900FA1BE4 /* main.cpp in Sources */,
+				A0714CA0254C07E200FA1BE4 /* SwiftyList.cpp in Sources */,
+				A0714CA6254DC0DA00FA1BE4 /* GraphVizDumper.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
