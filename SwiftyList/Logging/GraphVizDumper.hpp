@@ -14,14 +14,13 @@ struct ListGraphDumper {
 // private:
     FILE* file;
     SwiftyList* list;
-    char* imgPath;
     char* filePath;
     void dumpNodes();
     void dumpNode(size_t node);
     void drawGraphs();
 // public:
-    ListGraphDumper(SwiftyList* list, char* tmpFile, char* imgPath);
-    void build();
+    ListGraphDumper(SwiftyList* list, char* tmpFile);
+    void build(char* imgPath);
 };
 
 #endif /* GraphVizDumper_hpp */

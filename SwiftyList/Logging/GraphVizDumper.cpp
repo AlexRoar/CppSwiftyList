@@ -9,15 +9,13 @@
 #include <stdio.h>
 #include <string.h>
 
-ListGraphDumper::ListGraphDumper(SwiftyList* list, char* tmpFile, char* imgPath) {
-    this->file = fopen(tmpFile, "wb");
+ListGraphDumper::ListGraphDumper(SwiftyList* list, char* tmpFile) {
     this->filePath = tmpFile;
     this->list = list;
-    this->imgPath = imgPath;
 }
 
 void ListGraphDumper::dumpNodes() {
-    for(size_t i = 1; i <= this->list->sumSize(); i++) {
+    for(size_t i = 1; i <= this->list->size; i++) {
         this->dumpNode(i);
     }
 }
@@ -62,24 +60,25 @@ void ListGraphDumper::dumpNode(size_t node) {
     fprintf(this->file, "];\n");
 }
 void ListGraphDumper::drawGraphs() {
-    for(size_t i = 1; i <= this->list->sumSize(); i++) {
-        if (this->list->storage[i].next <= this->list->sumSize() &&
+    for(size_t i = 1; i <= this->list->size; i++) {
+        if (this->list->storage[i].next <= this->list->size &&
             this->list->storage[i].next != 0)
             fprintf(this->file, "node%zu:f2 -> node%zu:f1 [weight = 100, color=darkgreen]\n", i, this->list->storage[i].next);
-        if (this->list->storage[i].previous <= this->list->sumSize() &&
+        if (this->list->storage[i].previous <= this->list->size &&
             this->list->storage[i].previous != 0)
             fprintf(this->file, "node%zu:f0 -> node%zu:f1 [weight = 100, color=darkred]\n", i, this->list->storage[i].previous);
     }
 }
-void ListGraphDumper::build() {
+void ListGraphDumper::build(char* imgPath) {
+    this->file = fopen(this->filePath, "wb");
     fprintf(this->file, "digraph structs {\nnode [shape=none];\nrank=same;\nrankdir=\"LR\";\n");
     this->dumpNodes();
     this->drawGraphs();
     fprintf(this->file, "\n}\n");
     fflush(this->file);
     const char *command = DOTPATH " -Tpng %s -o %s";
-    char* compiledCommand = (char*)calloc(strlen(command) + strlen(this->imgPath) + strlen(this->filePath) + 3, 1);
-    sprintf(compiledCommand, command, this->filePath, this->imgPath);
+    char* compiledCommand = (char*)calloc(strlen(command) + strlen(imgPath) + strlen(this->filePath) + 3, 1);
+    sprintf(compiledCommand, command, this->filePath, imgPath);
     system(compiledCommand);
     fclose(this->file);
 }

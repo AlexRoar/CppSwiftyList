@@ -61,6 +61,7 @@ struct SwiftyList {
     //private:
     SwiftyListNode*    storage;
     bool               optimized;
+    bool               useChecks;
     size_t             capacity;
     size_t             size;
     SwiftyListParams*  params;
@@ -68,21 +69,15 @@ struct SwiftyList {
     size_t head;
     size_t tail;
     
-    size_t freeSize;
-    size_t freeSpace;
-    
-    size_t sumSize();
-    
     ListOpResult firstElementInsertion(const ListElem value, size_t* pos);
     size_t       getFreePos();
     ListOpResult reallocate  (bool onlyUp);
     ListOpResult insertAside (const ListElem value, size_t* pos);
     void         swapValues(size_t firstPos, size_t secondPos);
     void         swapPhysicOnly(size_t firstPos, size_t secondPos);
-    void         addFreedSpace(size_t pos);
     //public:
     ListOpResult set         (size_t pos,  const ListElem value);
-    ListOpResult get         (size_t pos,       ListElem* value);
+    ListOpResult get         (size_t pos,  ListElem* value);
     ListOpResult pushFront   (const ListElem value);
     ListOpResult pushBack    (const ListElem value);
     ListOpResult popFront    (ListElem* value);
@@ -93,6 +88,7 @@ struct SwiftyList {
     ListOpResult swap        (size_t firstPos, size_t secondPos);
     ListOpResult clear       ();
     ListOpResult optimize    ();
+    ListOpResult deOptimize  ();
     ListOpResult checkUp     ();
     ListOpResult print       ();
     

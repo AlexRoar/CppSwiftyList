@@ -126,26 +126,29 @@ TEST(SwiftyListTests, relloacations) {
     int tmpVal = 0;
     list->popBack(&tmpVal);
     EXPECT_EQ(list->getCapacity(), 20);
-    for(size_t i = 0; i < 10; i++) {
+    for(size_t i = 0; i < 5; i++) {
         list->popBack(&tmpVal);
     }
-    EXPECT_EQ(list->getCapacity(), 20);
+    EXPECT_EQ(list->getCapacity(), 10);
 }
 
 TEST(SwiftyListTests, remove) {
     SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, 0);
-    for(size_t i = 0; i < 100; i++) {
+    for(size_t i = 0; i < 10; i++) {
         list->pushBack(i);
     }
+    // 0 1 2 3 4 5 6 7 8 9
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
     list->remove(0);
 
+    // 1 2 3 4 5 6 7 8 9
     int val = 0;
     list->get(0, &val);
 
     EXPECT_EQ(val, 1);
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
 
+    // 1 2 3 5 6 7 8 9
     list->remove(3);
     list->get(3, &val);
 
@@ -187,30 +190,64 @@ TEST(SwiftyListTests, clear) {
 }
 
 TEST(SwiftyListTests, physicSwap) {
-    const int testSize = 10;
-    SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, 0);
-    for(size_t i = 0; i < testSize; i++) {
-        list->pushBack(i);
-    }
+    for (int testSize = 1; testSize < 100; testSize++) {
+        SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+        for (size_t i = 0; i < testSize; i++) {
+            list->pushBack(i);
+        }
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
 
-    for(size_t i = 0; i < 5000; i++) {
-        int rPos = rand();
-        int lPos = rand();
+        for (size_t i = 0; i < 10; i++) {
+            int rPos = rand();
+            int lPos = rand();
 //        ListGraphDumper* dumper = new ListGraphDumper(list, (char*)"grapfTst.gv", (char*)"grTestPre.png");
 //        dumper->build();
-        list->swapPhysicOnly(rPos % testSize, lPos % testSize);
-        int tmp = 0;
-        for(size_t j = 0; j < testSize; j++) {
-            list->get(j, &tmp);
-            EXPECT_EQ(tmp, j);
-            if (tmp != j){
+            EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+            list->swapPhysicOnly(rPos % testSize, lPos % testSize);
+            if (!(list->checkUp() == LIST_OP_OK)){
+                printf("%d: %d <-> %d\n", testSize, rPos % testSize, lPos % testSize);
+            }
+            EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+            int tmp = 0;
+            for (size_t j = 0; j < testSize; j++) {
+                list->get(j, &tmp);
+                EXPECT_EQ(tmp, j);
+                if (tmp != j) {
 //                ListGraphDumper* dumper = new ListGraphDumper(list, (char*)"grapfTst.gv", (char*)"grTest.png");
 //                dumper->build();
-                printf("%d <-> %d\n", rPos% testSize, lPos% testSize);
-                return;
+                    printf("%d <-> %d\n", rPos % testSize, lPos % testSize);
+                    return;
+                }
             }
+            if (tmp != testSize - 1)
+                break;
         }
-        if (tmp != testSize - 1)
-            break;
+    }
+}
+
+TEST(SwiftyListTests, optimizer) {
+
+    for (int testSize = 1; testSize < 100; testSize++) {
+        SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+        for (size_t i = 0; i < testSize; i++) {
+            list->pushBack(i);
+        }
+
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+        for (size_t i = 0; i < 5000; i++) {
+            int rPos = rand();
+            int lPos = rand();
+            list->swapPhysicOnly(rPos % testSize, lPos % testSize);
+        }
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+        list->optimize();
+        EXPECT_TRUE(list->isOptimized());
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+        for (size_t i = 0; i < testSize; i++) {
+            EXPECT_EQ(list->storage[i + 1].value, i);
+        }
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+        EXPECT_TRUE(list->isOptimized());
     }
 }

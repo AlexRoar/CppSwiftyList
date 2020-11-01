@@ -1,33 +1,68 @@
 #include <stdio.h>
+#include <ctime>
 #include "GraphVizDumper.hpp"
 #include "SwiftyList.hpp"
 
+#define TIME_MEASURED(code){clock_t begin = clock();code;clock_t end = clock();\
+double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;\
+printf("ELAPSED: %lf sec\n", elapsed_secs);}
+
 int main() {
     SwiftyList* list = new SwiftyList(0, 2, NULL, NULL, false);
+    ListGraphDumper* dumper = new ListGraphDumper(list, (char*)"grapfStructure.gv");
     
-    list->pushBack(0);
-    list->pushBack(1);
-    list->pushBack(2);
-    list->pushBack(3);
-    list->pushBack(4);
-//    list->swapPhysicOnly(3, 4);
-//    list->swapPhysicOnly(2, 3);
-    list->swapPhysicOnly(0, 1);
-//    list->swapPhysicOnly(2, 4);
-//    list->swapPhysicOnly(0, 3);
-//    list->swapPhysicOnly(0, 3);
-//    list->swapPhysicOnly(2, 4);
+    const size_t nElem = 30000;
+    printf("Pushing %zu elements...\n", nElem);
+    TIME_MEASURED({
+        for (size_t i = 0; i < nElem; i++) {
+            list->pushBack(rand());
+        }
+    })
     
-//    list->print(); printf("\n");
-    //    list->swapPhysicOnly(0, 1);
-    //    list->print(); printf("\n");
+    printf("\nSet-get operation on %zu elements ...\n", nElem);
+    TIME_MEASURED({
+        for (size_t i = 0; i < nElem; i++) {
+            int value = 0;
+            list->get(i, &value);
+            list->set(i, value);
+        }
+    })
+    
+    printf("\nDeoptimizing ...\n");
+    TIME_MEASURED({
+        list->deOptimize();
+    })
+    if (nElem < 50)
+        dumper->build("deoptimized.png");
+    
+    printf("\nSet-get operation on %zu elements ...\n", nElem);
+    TIME_MEASURED({
+        for (size_t i = 0; i < nElem; i++) {
+            int value = 0;
+            list->get(i, &value);
+            list->set(i, value);
+        }
+    })
+    
+    printf("\nOptimization ...\n");
+    TIME_MEASURED({
+        list->optimize();
+    })
+    
+    if (nElem < 50)
+        dumper->build("optimized.png");
+    
+    printf("\nSet-get operation on %zu elements ...\n", nElem);
+    TIME_MEASURED({
+        for (size_t i = 0; i < nElem; i++) {
+            int value = 0;
+            list->get(i, &value);
+            list->set(i, value);
+        }
+    })
+    
+    //    list->optimize();
     //
-    
-    //    list->print(); printf("\n");
-    //    list->remove(1);
-    //
-//    list->optimize();
-    ListGraphDumper* dumper = new ListGraphDumper(list, (char*)"grapfTst.gv", (char*)"gr.png");
-    dumper->build();
+    //    dumper->build();
     return 0;
 }
