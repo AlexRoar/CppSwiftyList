@@ -45,3 +45,6 @@ In de-optimized mode linear complexity in several operations appear.
 | deOptimize     |    O(n)   |      O(n)     |
 | checkUp        |    O(n)   |      O(n)     |
 | print          |    O(n)   |      O(n)     |
+
+### Deoptimize?
+Yes. I implemented a function that deoptimises your list as HELL by making n random permutations. Complete antipod for `optimize()`& Needed for global balance of energy in the world.
