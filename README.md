@@ -1,6 +1,6 @@
 # CppSwiftyList
 
-<img src="https://github.com/AlexRoar/CppSwiftyList/raw/main/Images/SpeedTest.png" width="100px">
+<img src="https://github.com/AlexRoar/CppSwiftyList/raw/main/Images/SpeedTest.png" width="300px">
 
 When you work with lists, its contents get messed up and operations are no longer efficient. Here, I implemented list with two modes: optimized and non-optimized. 
 If the list is optimized, then operations can be divided in two parts:
