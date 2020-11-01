@@ -1,0 +1,2 @@
+# CppSwiftyList
+Optimized list structure
