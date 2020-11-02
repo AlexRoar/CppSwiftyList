@@ -68,4 +68,5 @@ void ListGraphDumper::build(char *imgPath) {
     sprintf(compiledCommand, command, this->filePath, imgPath);
     system(compiledCommand);
     fclose(this->file);
+    free(compiledCommand);
 }
