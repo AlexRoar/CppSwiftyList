@@ -57,11 +57,6 @@ TEST(SwiftyListTests, pushFront) {
             EXPECT_TRUE(list.get(i, &tmp) == LIST_OP_OK);
             EXPECT_EQ(tmp, testSize - i - 1);
         }
-        for (size_t i = 0; i < testSize; i++) {
-            int val = 0;
-            EXPECT_TRUE(list.get(i, &val) == LIST_OP_OK);
-            EXPECT_EQ(val, testSize - i - 1);
-        }
         EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     }
 }
@@ -161,6 +156,8 @@ TEST(SwiftyListTests, relloacations) {
     for (size_t i = 0; i < 5; i++) {
         list.popBack(&tmpVal);
     }
+
+    list.popBack(&tmpVal);
     EXPECT_EQ(list.getCapacity(), 10);
 }
 

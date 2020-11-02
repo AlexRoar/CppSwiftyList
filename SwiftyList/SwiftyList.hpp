@@ -97,18 +97,18 @@ private:
     }
 
     ListOpResult reallocate(bool onlyUp) {
-        if (this->size < this->capacity)  return LIST_OP_OK;
+        if ((this->size < this->capacity) && onlyUp)  return LIST_OP_OK;
         size_t newCapacity = this->capacity;
-        if (newCapacity == 0) {
-            newCapacity = INITIAL_INCREASE;
-        } else {
-            newCapacity = this->capacity * 2;
-        }
+        if (this->size >= this->capacity)
+            newCapacity = (this->capacity == 0)? INITIAL_INCREASE: this->capacity * 2;
         if (!onlyUp) {
             if (this->capacity >= this->size * 4) {
-                newCapacity = newCapacity / 2;
+                newCapacity = this->capacity / 2;
             }
         }
+
+        if (this->capacity == newCapacity)
+            return LIST_OP_OK;
 
         SwiftyListNode<ListElem> *const newStorage = (SwiftyListNode<ListElem> *) realloc(this->storage,
                                                                                           (newCapacity + 1) *
@@ -293,7 +293,11 @@ public:
             this->optimized = false;
         size_t posNext = (pos + 1) % (this->size + 1);
         if (!this->optimized) {
-            posNext = this->logicToPhysic(posNext);
+            size_t iterator = 0;
+            for (size_t i = 0; i < posNext; i++) {
+                iterator = this->storage[iterator].next;
+            }
+            posNext = iterator;
         }
         size_t posNew = this->getFreePos();
         if (posNew == 0)
