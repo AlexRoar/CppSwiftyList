@@ -38,7 +38,7 @@ In de-optimized mode linear complexity in several operations appear.
 | popBack        |    O(1)   |      O(1)     |
 | search         |    O(n)   |      O(n)     |
 | remove         |    O(1)   |      O(n)     |
-| resize         |  O(logn)  |    O(logn)    |
+| resize         |    O(1)   |      O(1)     |
 | swap           |    O(1)   |      O(n)     |
 | clear          |    O(1)   |      O(1)     |
 | optimize       |    O(1)   |      O(n)     |
