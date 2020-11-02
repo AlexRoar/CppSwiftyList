@@ -8,12 +8,10 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
 set(SL_SOURCES
         SwiftyList/SwiftyList.cpp
-        SwiftyList/Logging/GraphVizDumper.cpp
         )
 
 include_directories(
         SwiftyList
-        SwiftyList/Logging
 )
 
 add_library(SwiftyList SHARED

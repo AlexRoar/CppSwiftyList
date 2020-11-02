@@ -2,3 +2,4 @@
 build/
 cmake-build-debug/
 googletest/
+cmake-build-debug-coverage/

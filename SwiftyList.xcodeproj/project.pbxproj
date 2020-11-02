@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		A0714C95254C06E900FA1BE4 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A0714C94254C06E900FA1BE4 /* main.cpp */; };
 		A0714CA0254C07E200FA1BE4 /* SwiftyList.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A0714C9E254C07E200FA1BE4 /* SwiftyList.cpp */; };
-		A0714CA6254DC0DA00FA1BE4 /* GraphVizDumper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A0714CA4254DC0DA00FA1BE4 /* GraphVizDumper.cpp */; };
+		A0714CA6254DC0DA00FA1BE4 /* GraphVizDumper.hpp in Sources */ = {isa = PBXBuildFile; fileRef = A0714CA4254DC0DA00FA1BE4 /* GraphVizDumper.hpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -30,7 +30,7 @@
 		A0714C94254C06E900FA1BE4 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		A0714C9E254C07E200FA1BE4 /* SwiftyList.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SwiftyList.cpp; sourceTree = "<group>"; };
 		A0714C9F254C07E200FA1BE4 /* SwiftyList.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SwiftyList.hpp; sourceTree = "<group>"; };
-		A0714CA4254DC0DA00FA1BE4 /* GraphVizDumper.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = GraphVizDumper.cpp; path = SwiftyList/Logging/GraphVizDumper.cpp; sourceTree = SOURCE_ROOT; };
+		A0714CA4254DC0DA00FA1BE4 /* GraphVizDumper.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = GraphVizDumper.hpp; path = SwiftyList/Logging/GraphVizDumper.hpp; sourceTree = SOURCE_ROOT; };
 		A0714CA8254DC8C300FA1BE4 /* gr.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = gr.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -85,7 +85,7 @@
 		A0714CA2254C097A00FA1BE4 /* Logging */ = {
 			isa = PBXGroup;
 			children = (
-				A0714CA4254DC0DA00FA1BE4 /* GraphVizDumper.cpp */,
+				A0714CA4254DC0DA00FA1BE4 /* GraphVizDumper.hpp */,
 			);
 			path = Logging;
 			sourceTree = "<group>";
@@ -148,7 +148,7 @@
 			files = (
 				A0714C95254C06E900FA1BE4 /* main.cpp in Sources */,
 				A0714CA0254C07E200FA1BE4 /* SwiftyList.cpp in Sources */,
-				A0714CA6254DC0DA00FA1BE4 /* GraphVizDumper.cpp in Sources */,
+				A0714CA6254DC0DA00FA1BE4 /* GraphVizDumper.hpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -8,7 +8,7 @@
 #include "SwiftyList.hpp"
 
 TEST(SwiftyListTests, checkUp) {
-    SwiftyList list(0, 0, NULL, NULL, false);
+    SwiftyList<int> list(0, 0, NULL, NULL, false);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     list.pushBack(1);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
@@ -29,7 +29,7 @@ TEST(SwiftyListTests, checkUp) {
 
 
 TEST(SwiftyListTests, pushBack) {
-    SwiftyList list(0, 0, NULL, NULL, false);
+    SwiftyList<int> list(0, 0, NULL, NULL, false);
     for (size_t i = 0; i < 100; i++) {
         list.pushBack(i);
     }
@@ -47,7 +47,7 @@ TEST(SwiftyListTests, pushBack) {
 }
 
 TEST(SwiftyListTests, pushFront) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     for (size_t i = 0; i < 100; i++) {
         list.pushFront(i);
     }
@@ -66,7 +66,7 @@ TEST(SwiftyListTests, pushFront) {
 }
 
 TEST(SwiftyListTests, popFront) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     for (size_t i = 0; i < 100; i++) {
         list.pushBack(i);
     }
@@ -80,7 +80,7 @@ TEST(SwiftyListTests, popFront) {
 }
 
 TEST(SwiftyListTests, popBack) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     for (size_t i = 0; i < 100; i++) {
         list.pushFront(i);
     }
@@ -94,7 +94,7 @@ TEST(SwiftyListTests, popBack) {
 }
 
 TEST(SwiftyListTests, setGet) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     for (size_t i = 0; i < 100; i++) {
         list.pushFront(i);
     }
@@ -122,7 +122,7 @@ TEST(SwiftyListTests, setGet) {
 }
 
 TEST(SwiftyListTests, search) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     for (size_t i = 0; i < 100; i++) {
         list.pushFront(2 * i);
     }
@@ -136,7 +136,7 @@ TEST(SwiftyListTests, search) {
 }
 
 TEST(SwiftyListTests, relloacations) {
-    SwiftyList list(10, 0, NULL, NULL, false);
+    SwiftyList<int> list(10, 0, NULL, NULL, false);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 10; i++) {
         list.pushBack(i);
@@ -155,7 +155,7 @@ TEST(SwiftyListTests, relloacations) {
 }
 
 TEST(SwiftyListTests, remove) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     for (size_t i = 0; i < 10; i++) {
         list.pushBack(i);
     }
@@ -179,7 +179,7 @@ TEST(SwiftyListTests, remove) {
 }
 
 TEST(SwiftyListTests, sideCases) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     list.pushBack(1);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
 
@@ -200,7 +200,7 @@ TEST(SwiftyListTests, sideCases) {
 }
 
 TEST(SwiftyListTests, clear) {
-    SwiftyList list(0, 0, NULL, NULL, false);
+    SwiftyList<int> list(0, 0, NULL, NULL, false);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 10; i++) {
         list.pushBack(i);
@@ -213,7 +213,7 @@ TEST(SwiftyListTests, clear) {
 
 TEST(SwiftyListTests, physicSwap) {
     for (int testSize = 1; testSize < 100; testSize++) {
-        SwiftyList list(0, 0, NULL, NULL, 0);
+        SwiftyList<int> list(0, 0, NULL, NULL, 0);
         EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
         for (size_t i = 0; i < testSize; i++) {
             list.pushBack(i);
@@ -250,7 +250,7 @@ TEST(SwiftyListTests, physicSwap) {
 
 TEST(SwiftyListTests, optimizer) {
     for (int testSize = 1; testSize < 100; testSize++) {
-        SwiftyList list(0, 0, NULL, NULL, 0);
+        SwiftyList<int> list(0, 0, NULL, NULL, 0);
         for (size_t i = 0; i < testSize; i++) {
             list.pushBack(i);
         }
@@ -274,7 +274,7 @@ TEST(SwiftyListTests, optimizer) {
 }
 
 TEST(SwiftyListTests, insert) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     list.optimized = false;
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     list.insert(0, 5);
@@ -297,7 +297,7 @@ TEST(SwiftyListTests, insert) {
 }
 
 TEST(SwiftyListTests, empty) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     EXPECT_EQ(0, list.getSize());
     EXPECT_TRUE(list.isEmpty());
     EXPECT_TRUE(list.isOptimized());
@@ -305,7 +305,7 @@ TEST(SwiftyListTests, empty) {
 }
 
 TEST(SwiftyListTests, pushPop) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 1000; i++) {
         if (i % 2 == 0)
@@ -326,7 +326,7 @@ TEST(SwiftyListTests, pushPop) {
 }
 
 TEST(SwiftyListTests, randomRemove) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 1000; i++) {
         if (i % 2 == 0)
@@ -343,7 +343,7 @@ TEST(SwiftyListTests, randomRemove) {
 }
 
 TEST(SwiftyListTests, capacity) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 1000; i++) {
         if (i % 2 == 0)
@@ -357,7 +357,7 @@ TEST(SwiftyListTests, capacity) {
 }
 
 TEST(SwiftyListTests, resize0) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 1000; i++) {
         if (i % 2 == 0)
@@ -376,7 +376,7 @@ TEST(SwiftyListTests, resize0) {
 }
 
 TEST(SwiftyListTests, resizeALot) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 1000; i++) {
         if (i % 2 == 0)
@@ -395,7 +395,7 @@ TEST(SwiftyListTests, resizeALot) {
 }
 
 TEST(SwiftyListTests, clearBig) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 1000; i++) {
         if (i % 2 == 0)
@@ -412,7 +412,7 @@ TEST(SwiftyListTests, clearBig) {
 }
 
 TEST(SwiftyListTests, shrinkToFit) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 1000; i++) {
         if (i % 2 == 0)
@@ -429,7 +429,7 @@ TEST(SwiftyListTests, shrinkToFit) {
 }
 
 TEST(SwiftyListTests, deoptimize) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 1000; i++) {
         if (i % 2 == 0)
@@ -444,7 +444,7 @@ TEST(SwiftyListTests, deoptimize) {
 }
 
 TEST(SwiftyListTests, swap) {
-    SwiftyList list(0, 0, NULL, NULL, 0);
+    SwiftyList<int> list(0, 0, NULL, NULL, 0);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 1000; i++) {
         list.pushBack(i);
@@ -502,7 +502,7 @@ TEST(SwiftyListTests, swap) {
 TEST(SwiftyListTests, getters) {
 
     FILE* logFile = fopen("/dev/null", "w");
-    SwiftyList list(10, 2, (char*)"/log", logFile, false);
+    SwiftyList<int> list(10, 2, (char*)"/log", logFile, false);
     EXPECT_TRUE(strcmp("/log", list.params->getLogDir().storage) == 0);
     EXPECT_TRUE(list.params->getLogFile() == logFile );
     EXPECT_TRUE(list.params->getChecks() == false );

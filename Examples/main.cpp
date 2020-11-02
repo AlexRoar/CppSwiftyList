@@ -8,17 +8,17 @@ double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;\
 printf("ELAPSED: %lf sec\n", elapsed_secs);}
 
 int main() {
-    SwiftyList* list = new SwiftyList(0, 2, NULL, NULL, false);
-    ListGraphDumper* dumper = new ListGraphDumper(list, (char*)"grapfStructure.gv");
+    SwiftyList<int> list(0, 2, NULL, NULL, false);
+    ListGraphDumper<int> dumper(&list, (char*)"grapfStructure.gv");
     
     const size_t nElem = 500;
     printf("Pushing %zu elements...\n", nElem);
     TIME_MEASURED({
         for (size_t i = 0; i < nElem; i++) {
             if (i%2 == 0)
-                list->pushBack(rand());
+                list.pushBack(rand());
             else
-                list->pushFront(rand());
+                list.pushFront(rand());
         }
     })
     
@@ -36,7 +36,7 @@ int main() {
 //        list->deOptimize();
 //    })
 //    if (nElem < 50)
-        dumper->build("deoptimized.svg");
+        dumper.build("deoptimized.svg");
     
 //    printf("\nSet-get operation on %zu elements ...\n", nElem);
 //    TIME_MEASURED({
@@ -49,11 +49,11 @@ int main() {
     
     printf("\nOptimization ...\n");
     TIME_MEASURED({
-        list->optimize();
+        list.optimize();
     })
     
 //    if (nElem < 50)
-        dumper->build("optimized.svg");
+        dumper.build("optimized.svg");
     
 //    printf("\nSet-get operation on %zu elements ...\n", nElem);
 //    TIME_MEASURED({
