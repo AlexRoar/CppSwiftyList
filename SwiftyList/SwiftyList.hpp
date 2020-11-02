@@ -55,10 +55,11 @@ struct SwiftyListParams {
 
     SwiftyListParams(short int verbose, char *logDir, bool useChecks, FILE *logFile) {
         this->verbose = verbose;
+
         ListStringView logDirString = {};
-        if (logDir != NULL)
-            logDirString.len = strlen(logDir);
+        if (logDir != NULL) logDirString.len = strlen(logDir);
         logDirString.storage = logDir;
+
         this->logDir = logDirString;
         this->useChecks = useChecks;
         this->logFile = logFile;
@@ -91,32 +92,23 @@ private:
     size_t size;
     struct SwiftyListParams *params;
 
-    size_t getFreePos() {
-        ListOpResult reallocRes = this->reallocate(true);
-        if (reallocRes != LIST_OP_OK)
-            return 0;
-        return this->size + 1;
+    size_t inline getFreePos() {
+        return (this->reallocate(true) != LIST_OP_OK)?  0: this->size + 1;
     }
 
     ListOpResult reallocate(bool onlyUp) {
-        PERFORM_CHECKS;
+        if (this->size < this->capacity)  return LIST_OP_OK;
         size_t newCapacity = this->capacity;
         if (newCapacity == 0) {
             newCapacity = INITIAL_INCREASE;
         } else {
-            if (this->size >= this->capacity) {
-                newCapacity = this->capacity * 2;
-            }
+            newCapacity = this->capacity * 2;
         }
-
         if (!onlyUp) {
             if (this->capacity >= this->size * 4) {
                 newCapacity = newCapacity / 2;
             }
         }
-
-        if (newCapacity == this->capacity)
-            return LIST_OP_OK;
 
         SwiftyListNode<ListElem> *const newStorage = (SwiftyListNode<ListElem> *) realloc(this->storage,
                                                                                           (newCapacity + 1) *
@@ -204,6 +196,24 @@ private:
         }
     };
 
+    size_t inline logicToPhysic(size_t pos){
+        if (this->optimized) {
+            return pos + 1;
+        } else {
+            size_t volatile iterator = 0;
+//            if (pos <= this->size / 2) {
+                for (size_t i = 0; i <= pos; i++) {
+                    iterator = this->storage[iterator].next;
+                }
+//            } else {
+//                for (size_t i = 0; i < this->size - pos - 1; i++) {
+//                    iterator = this->storage[iterator].previous;
+//                }
+//            }
+            return iterator;
+        }
+    }
+
 public:
 
     SwiftyList(size_t initialSize, short int verbose, char *logDir, FILE *logFile, bool useChecks) :
@@ -262,16 +272,8 @@ public:
         PERFORM_CHECKS;
         if (pos >= this->size)
             return LIST_OP_UNDERFLOW;
-        if (this->optimized) {
-            this->storage[pos + 1].value = value;
-        } else {
-            size_t iterator = this->storage[0].next;
-            for (size_t i = 0; i < pos; i++) {
-                iterator = this->storage[iterator].next;
-            }
-            this->storage[iterator].value = value;
-
-        }
+        size_t physPos = this->logicToPhysic(pos);
+        this->storage[physPos].value = value;
         return LIST_OP_OK;
     }
 
@@ -279,15 +281,8 @@ public:
         PERFORM_CHECKS;
         if (pos >= this->size)
             return LIST_OP_UNDERFLOW;
-        if (this->optimized) {
-            *value = this->storage[pos + 1].value;
-        } else {
-            size_t iterator = 0;
-            for (size_t i = 0; i <= pos; i++) {
-                iterator = this->storage[iterator].next;
-            }
-            *value = this->storage[iterator].value;
-        }
+        size_t physPos = this->logicToPhysic(pos);
+        *value = this->storage[physPos].value;
         return LIST_OP_OK;
     }
 
@@ -298,11 +293,7 @@ public:
             this->optimized = false;
         size_t posNext = (pos + 1) % (this->size + 1);
         if (!this->optimized) {
-            size_t iterator = 0;
-            for (size_t i = 0; i < posNext; i++) {
-                iterator = this->storage[iterator].next;
-            }
-            posNext = iterator;
+            posNext = this->logicToPhysic(posNext);
         }
         size_t posNew = this->getFreePos();
         if (posNew == 0)

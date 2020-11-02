@@ -13,33 +13,29 @@ int main() {
     const size_t nElem = 10e7;
     printf("Pushing %zu elements...\n", nElem);
     TIME_MEASURED({
-                      for (size_t i = 0; i < nElem; i++) {
+                      for (size_t i = 0; i < nElem; ++i) {
                           if (i % 2 == 0)
                               list.pushBack(i);
                           else
                               list.pushFront(i);
                       }
                   })
+//    list.deOptimize();
 
     if (nElem < 100) {
         printf("\nSet-get operation on %zu elements ...\n", nElem);
         TIME_MEASURED({
-                          for (size_t i = 0; i < nElem; i++) {
+                          for (size_t i = 0; i < nElem; ++i) {
                               int value = 0;
                               list.get(i, &value);
                               list.set(i, value);
                           }
                       })
     }
-    printf("\nDeoptimizing ...\n");
-    TIME_MEASURED({
-                      list.deOptimize();
-                  })
-
     if (nElem < 100) {
         printf("\nSet-get operation on %zu elements ...\n", nElem);
         TIME_MEASURED({
-                          for (size_t i = 0; i < nElem; i++) {
+                          for (size_t i = 0; i < nElem; ++i) {
                               int value = 0;
                               list.get(i, &value);
                               list.set(i, value);
@@ -52,17 +48,16 @@ int main() {
                       list.optimize();
                   })
 
-    if (nElem < 100) {
 
-        printf("\nSet-get operation on %zu elements ...\n", nElem);
-        TIME_MEASURED({
-                          for (size_t i = 0; i < nElem; i++) {
-                              int value = 0;
-                              list.get(i, &value);
-                              list.set(i, value);
-                          }
-                      })
-    }
+    printf("\nSet-get operation on %zu elements ...\n", nElem);
+    TIME_MEASURED({
+                      for (size_t i = 0; i < nElem; ++i) {
+                          int value = 0;
+                          list.get(i, &value);
+                          list.set(i, value);
+                      }
+                  })
+
 
     return 0;
 }
