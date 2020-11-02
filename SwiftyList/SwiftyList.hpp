@@ -83,7 +83,7 @@ struct SwiftyListParams {
 
 template<typename ListElem>
 struct SwiftyList {
-    //private:
+private:
     SwiftyListNode<ListElem> *storage;
     bool optimized;
     bool useChecks;
@@ -118,7 +118,7 @@ struct SwiftyList {
         if (newCapacity == this->capacity)
             return LIST_OP_OK;
 
-        SwiftyListNode<ListElem> *const newStorage = (SwiftyListNode<ListElem> *) realloc(this->storage,
+        auto *const newStorage = (SwiftyListNode<ListElem> *) realloc(this->storage,
                                                                                           (newCapacity + 1) *
                                                                                           sizeof(SwiftyListNode<ListElem>));
         if (newStorage == NULL)
@@ -128,11 +128,15 @@ struct SwiftyList {
         return LIST_OP_OK;
     }
 
+public:
+
     void swapPhysicOnly(size_t firstPos, size_t secondPos) {
-        firstPos++;
-        secondPos++;
+        if (secondPos > this->size || firstPos > this->size)
+            return;
         if (secondPos == firstPos)
             return;
+        firstPos++;
+        secondPos++;
         this->optimized = false;
 
         if (this->storage[firstPos].previous == secondPos) {
@@ -148,20 +152,19 @@ struct SwiftyList {
         this->storage[tmpFirst.previous].next = secondPos;
         this->storage[this->storage[firstPos].next].previous = firstPos;
 
-        if (this->storage[firstPos].previous == firstPos ||
-            tmpFirst.next == secondPos ||
-            this->storage[firstPos].next == firstPos ||
-            tmpFirst.previous == secondPos) {
+        if (this->storage[firstPos].previous == firstPos || this->storage[firstPos].next == firstPos) {
             this->storage[secondPos].next = firstPos;
             this->storage[firstPos].previous = secondPos;
         } else {
             this->storage[tmpFirst.next].previous = secondPos;
             this->storage[this->storage[firstPos].previous].next = firstPos;
         }
-
     }
 
-    //public:
+    SwiftyListParams* getParams(){
+        return this->params;
+    }
+
     ListOpResult set(size_t pos, const ListElem value) {
         PERFORM_CHECKS;
         if (pos >= this->size)
@@ -352,7 +355,6 @@ struct SwiftyList {
 
     ListOpResult optimize() {
         PERFORM_CHECKS;
-
         for (size_t i = 0; i < this->size; i++) {
             size_t nextPos = this->storage[i].next - 1;
             if (i < nextPos)
@@ -460,11 +462,11 @@ struct ListGraphDumper {
         } else {
             fprintf(this->file, "<td colspan=\"3\" bgcolor=\"pink\" port=\"f0h\" border=\"1\">%zu</td>", node);
         }
-        fprintf(this->file, "</tr><tr><td color=\"darkred\" port=\"f0\" border=\"2\">%zu</td>",
+        fprintf(this->file, "</tr><tr><td color=\"darkred\" port=\"f0\" border=\"1\">%zu</td>",
                 this->list->storage[node].previous);
         fprintf(this->file, "<td bgcolor=\"darkblue\" port=\"f1\" border=\"1\">");
         fprintf(this->file, "<font color=\"white\">%d</font></td>"
-                            "<td color=\"darkgreen\" port=\"f2\" border=\"2\">%zu</td>"
+                            "<td color=\"darkgreen\" port=\"f2\" border=\"1\">%zu</td>"
                             "</tr></table>>",
                 this->list->storage[node].value,
                 this->list->storage[node].next);
@@ -481,9 +483,9 @@ struct ListGraphDumper {
                         i,
                         this->list->storage[i].previous);
             } else {
-                fprintf(this->file, "node%zu:f0h -> node%zu:f1 [weight = 100, color=darkgreen, constraint=false]\n",
+                fprintf(this->file, "node%zu:f2 -> node%zu:f0h [weight = 100, color=darkgreen, constraint=false]\n",
                         i, this->list->storage[i].next);
-                fprintf(this->file, "node%zu:f0 -> node%zu:f0h [weight = 100, color=darkred,  constraint=false]\n", i,
+                fprintf(this->file, "node%zu:f0 -> node%zu:f1 [weight = 100, color=darkred,  constraint=false]\n", i,
                         this->list->storage[i].previous);
             }
         }
