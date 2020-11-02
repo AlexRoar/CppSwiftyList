@@ -118,7 +118,7 @@ private:
         if (newCapacity == this->capacity)
             return LIST_OP_OK;
 
-        auto *const newStorage = (SwiftyListNode<ListElem> *) realloc(this->storage,
+        SwiftyListNode<ListElem> *const newStorage = (SwiftyListNode<ListElem> *) realloc(this->storage,
                                                                                           (newCapacity + 1) *
                                                                                           sizeof(SwiftyListNode<ListElem>));
         if (newStorage == NULL)
@@ -128,7 +128,100 @@ private:
         return LIST_OP_OK;
     }
 
+    struct ListGraphDumper {
+        // private:
+        FILE *file;
+        char *filePath;
+
+        SwiftyList<ListElem> *list;
+
+        void dumpNodes() {
+            for (size_t i = 0; i <= this->list->getSize(); i++) {
+                this->dumpNode(i);
+            }
+        }
+
+        void dumpNode(size_t node) {
+            fprintf(this->file, "node%zu [label=", node);
+            fprintf(this->file, "<<table border=\"0\" cellspacing=\"0\"><tr>");
+            if (node == 0) {
+                fprintf(this->file, "<td colspan=\"3\" bgcolor=\"lightyellow\" port=\"f0h\" border=\"1\">h+t</td>");
+            } else {
+                fprintf(this->file, "<td colspan=\"3\" bgcolor=\"pink\" port=\"f0h\" border=\"1\">%zu</td>", node);
+            }
+            int tmp = 0;
+            this->list->get(node, &tmp);
+            fprintf(this->file, "</tr><tr><td color=\"darkred\" port=\"f0\" border=\"1\">%zu</td>",
+                    this->list->storage[node].previous);
+            fprintf(this->file, "<td bgcolor=\"darkblue\" port=\"f1\" border=\"1\">");
+            fprintf(this->file, "<font color=\"white\">%d</font></td>"
+                                "<td color=\"darkgreen\" port=\"f2\" border=\"1\">%zu</td>"
+                                "</tr></table>>",
+                    this->list->storage[node].value,
+                    this->list->storage[node].next);
+            fprintf(this->file, "];\n");
+        }
+
+        void drawGraphs() {
+            for (size_t i = 0; i <= this->list->size; i++) {
+                if (i == 0) {
+                    fprintf(this->file, "node%zu:f2 -> node%zu:f0 [weight = 100, color=darkgreen, constraint=false]\n",
+                            i,
+                            this->list->storage[i].next);
+                    fprintf(this->file, "node%zu:f0h -> node%zu:f0h [weight = 100, color=darkred, constraint=false]\n",
+                            i,
+                            this->list->storage[i].previous);
+                } else {
+                    fprintf(this->file, "node%zu:f2 -> node%zu:f0h [weight = 100, color=darkgreen, constraint=false]\n",
+                            i, this->list->storage[i].next);
+                    fprintf(this->file, "node%zu:f0 -> node%zu:f1 [weight = 100, color=darkred,  constraint=false]\n",
+                            i,
+                            this->list->storage[i].previous);
+                }
+            }
+        }
+
+        // public:
+        ListGraphDumper(SwiftyList<ListElem> *list, char *tmpFile) {
+            this->filePath = tmpFile;
+            this->list = list;
+        }
+
+
+        void build(char *imgPath) {
+            this->file = fopen(this->filePath, "wb");
+            fprintf(this->file, "digraph structs {\nnode [shape=none];\nrank=same;\nrankdir=\"LR\";\n");
+            this->dumpNodes();
+            this->drawGraphs();
+            fprintf(this->file, "\n}\n");
+            fflush(this->file);
+            const char *command = DOTPATH " -Tsvg %s -o %s";
+            char *compiledCommand = (char *) calloc(strlen(command) + strlen(imgPath) + strlen(this->filePath) + 3, 1);
+            sprintf(compiledCommand, command, this->filePath, imgPath);
+            system(compiledCommand);
+            fclose(this->file);
+            free(compiledCommand);
+        }
+    };
+
 public:
+
+    SwiftyList(size_t initialSize, short int verbose, char *logDir, FILE *logFile, bool useChecks) :
+            optimized(true),
+            capacity(initialSize),
+            size(0),
+            useChecks(useChecks) {
+        this->storage = (SwiftyListNode<ListElem> *) calloc(initialSize + 1, sizeof(SwiftyListNode<ListElem>));
+        this->params = new SwiftyListParams(verbose, logDir, useChecks, logFile);
+    }
+
+    void buildGraph(char* imgName){
+
+    }
+
+    ~SwiftyList() {
+        free(this->storage);
+    }
 
     void swapPhysicOnly(size_t firstPos, size_t secondPos) {
         if (secondPos > this->size || firstPos > this->size)
@@ -161,7 +254,7 @@ public:
         }
     }
 
-    SwiftyListParams* getParams(){
+    SwiftyListParams *getParams() {
         return this->params;
     }
 
@@ -424,93 +517,6 @@ public:
 
     bool isEmpty() {
         return this->size == 0;
-    }
-
-    SwiftyList(size_t initialSize, short int verbose, char *logDir, FILE *logFile, bool useChecks) :
-            optimized(true),
-            capacity(initialSize),
-            size(0),
-            useChecks(useChecks) {
-        this->storage = (SwiftyListNode<ListElem> *) calloc(initialSize + 1, sizeof(SwiftyListNode<ListElem>));
-        this->params = new SwiftyListParams(verbose, logDir, useChecks, logFile);
-    }
-
-    ~SwiftyList() {
-        free(this->storage);
-    }
-};
-
-template<typename ListElem>
-struct ListGraphDumper {
-    // private:
-    FILE *file;
-    char *filePath;
-
-    SwiftyList<ListElem> *list;
-
-    void dumpNodes() {
-        for (size_t i = 0; i <= this->list->size; i++) {
-            this->dumpNode(i);
-        }
-    }
-
-    void dumpNode(size_t node) {
-        fprintf(this->file, "node%zu [label=", node);
-        fprintf(this->file, "<<table border=\"0\" cellspacing=\"0\"><tr>");
-        if (node == 0) {
-            fprintf(this->file, "<td colspan=\"3\" bgcolor=\"lightyellow\" port=\"f0h\" border=\"1\">h+t</td>");
-        } else {
-            fprintf(this->file, "<td colspan=\"3\" bgcolor=\"pink\" port=\"f0h\" border=\"1\">%zu</td>", node);
-        }
-        fprintf(this->file, "</tr><tr><td color=\"darkred\" port=\"f0\" border=\"1\">%zu</td>",
-                this->list->storage[node].previous);
-        fprintf(this->file, "<td bgcolor=\"darkblue\" port=\"f1\" border=\"1\">");
-        fprintf(this->file, "<font color=\"white\">%d</font></td>"
-                            "<td color=\"darkgreen\" port=\"f2\" border=\"1\">%zu</td>"
-                            "</tr></table>>",
-                this->list->storage[node].value,
-                this->list->storage[node].next);
-        fprintf(this->file, "];\n");
-    }
-
-    void drawGraphs() {
-        for (size_t i = 0; i <= this->list->size; i++) {
-            if (i == 0) {
-                fprintf(this->file, "node%zu:f2 -> node%zu:f0 [weight = 100, color=darkgreen, constraint=false]\n",
-                        i,
-                        this->list->storage[i].next);
-                fprintf(this->file, "node%zu:f0h -> node%zu:f0h [weight = 100, color=darkred, constraint=false]\n",
-                        i,
-                        this->list->storage[i].previous);
-            } else {
-                fprintf(this->file, "node%zu:f2 -> node%zu:f0h [weight = 100, color=darkgreen, constraint=false]\n",
-                        i, this->list->storage[i].next);
-                fprintf(this->file, "node%zu:f0 -> node%zu:f1 [weight = 100, color=darkred,  constraint=false]\n", i,
-                        this->list->storage[i].previous);
-            }
-        }
-    }
-
-    // public:
-    ListGraphDumper(SwiftyList<ListElem> *list, char *tmpFile) {
-        this->filePath = tmpFile;
-        this->list = list;
-    }
-
-
-    void build(char *imgPath) {
-        this->file = fopen(this->filePath, "wb");
-        fprintf(this->file, "digraph structs {\nnode [shape=none];\nrank=same;\nrankdir=\"LR\";\n");
-        this->dumpNodes();
-        this->drawGraphs();
-        fprintf(this->file, "\n}\n");
-        fflush(this->file);
-        const char *command = DOTPATH " -Tsvg %s -o %s";
-        char *compiledCommand = (char *) calloc(strlen(command) + strlen(imgPath) + strlen(this->filePath) + 3, 1);
-        sprintf(compiledCommand, command, this->filePath, imgPath);
-        system(compiledCommand);
-        fclose(this->file);
-        free(compiledCommand);
     }
 };
 
