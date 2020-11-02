@@ -64,7 +64,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "373"
             endingLineNumber = "373"
-            landmarkName = "SwiftyList::swap(firstPos, secondPos)"
+            landmarkName = "SwiftyList::swapPhysicOnly(firstPos, secondPos)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -80,7 +80,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "377"
             endingLineNumber = "377"
-            landmarkName = "SwiftyList::swap(firstPos, secondPos)"
+            landmarkName = "SwiftyList::swapPhysicOnly(firstPos, secondPos)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -96,7 +96,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "378"
             endingLineNumber = "378"
-            landmarkName = "SwiftyList::swap(firstPos, secondPos)"
+            landmarkName = "SwiftyList::swapPhysicOnly(firstPos, secondPos)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -112,7 +112,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "379"
             endingLineNumber = "379"
-            landmarkName = "SwiftyList::swap(firstPos, secondPos)"
+            landmarkName = "SwiftyList::swapPhysicOnly(firstPos, secondPos)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -127,9 +127,7 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "498"
-            endingLineNumber = "498"
-            landmarkName = "SwiftyList::deOptimize()"
-            landmarkType = "7">
+            endingLineNumber = "498">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

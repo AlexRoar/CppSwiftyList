@@ -19,8 +19,6 @@ SwiftyList::SwiftyList(size_t initialSize, short int verbose, char *logDir, FILE
 optimized(true),
 capacity(initialSize),
 size(0),
-head(0),
-tail(0),
 useChecks(useChecks){
     this->storage = (SwiftyListNode *) calloc(initialSize + 1, sizeof(SwiftyListNode));
     this->params = new SwiftyListParams(verbose, logDir, useChecks, logFile);
@@ -39,11 +37,38 @@ size_t SwiftyList::getCapacity() const {
 ListOpResult SwiftyList::clear() {
     PERFORM_CHECKS;
     this->size = 0;
-    this->head = 0;
-    this->tail = 0;
+    this->storage[0].next = 0;
+    this->storage[0].previous = 0;
+    this->reallocate(false);
     return LIST_OP_OK;
 }
 
+ListOpResult SwiftyList::insert(size_t pos, ListElem value) {
+    if (pos > this->size)
+        return LIST_OP_OVERFLOW;
+    if (pos != this->size)
+        this->optimized = false;
+    size_t posNext = (pos + 1) % (this->size + 1);
+    if (!this->optimized){
+        size_t iterator = 0;
+        for (size_t i = 0; i < posNext; i++) {
+            iterator = this->storage[iterator].next;
+        }
+        posNext = iterator;
+    }
+    size_t posNew = this->getFreePos();
+    if (posNew == 0)
+        return LIST_OP_NOMEM;
+    this->storage[posNew].next = posNext;
+    this->storage[posNew].previous = this->storage[posNext].previous;
+    this->storage[posNew].value = value;
+
+    this->storage[this->storage[posNext].previous].next = posNew;
+    this->storage[posNext].previous = posNew;
+
+    this->size++;
+    return LIST_OP_OK;
+}
 
 ListOpResult SwiftyList::resize(size_t nElements) {
     PERFORM_CHECKS;
@@ -51,57 +76,23 @@ ListOpResult SwiftyList::resize(size_t nElements) {
     if (nElements < sumSizes) {
         nElements = sumSizes;
     }
-    
+
+    nElements++;
     SwiftyListNode *newStorage = (SwiftyListNode *) realloc(this->storage, nElements * sizeof(SwiftyListNode));
     
     if (newStorage == nullptr) return LIST_OP_NOMEM;
     
     this->storage = newStorage;
-    this->capacity = nElements;
-    return LIST_OP_OK;
-}
-
-ListOpResult SwiftyList::insertAside(const ListElem value, size_t *pos) {
-    *pos = this->getFreePos();
-    if (*pos == 0)
-        return LIST_OP_NOMEM;
-    this->storage[this->tail].next = *pos;
-    this->storage[this->head].previous = *pos;
-    this->storage[*pos].value = value;
-    this->storage[*pos].previous = this->tail;
-    this->storage[*pos].next = this->head;
+    this->capacity = nElements - 1;
     return LIST_OP_OK;
 }
 
 ListOpResult SwiftyList::pushBack(const ListElem value) {
-    PERFORM_CHECKS;
-    size_t pos = 0;
-    if (this->size == 0) {
-        return firstElementInsertion(value, &pos);
-    } else {
-        ListOpResult insertRes = this->insertAside(value, &pos);
-        if (insertRes != LIST_OP_OK)
-            return insertRes;
-        this->tail = pos;
-    }
-    this->size++;
-    return LIST_OP_OK;
+    return this->insert(this->size, value);
 }
 
 ListOpResult SwiftyList::pushFront(const ListElem value) {
-    PERFORM_CHECKS;
-    this->optimized = false;
-    size_t pos = 0;
-    if (this->size == 0) {
-        return firstElementInsertion(value, &pos);
-    } else {
-        ListOpResult insertRes = this->insertAside(value, &pos);
-        if (insertRes != LIST_OP_OK)
-            return insertRes;
-        this->head = pos;
-    }
-    this->size++;
-    return LIST_OP_OK;
+    return this->insert(0, value);
 }
 
 size_t SwiftyList::getFreePos() {
@@ -111,19 +102,6 @@ size_t SwiftyList::getFreePos() {
     return  this->size + 1;
 }
 
-ListOpResult SwiftyList::firstElementInsertion(const ListElem value, size_t *pos) {
-    *pos = this->getFreePos();
-    if (*pos == 0)
-        return LIST_OP_NOMEM;
-    this->tail = *pos;
-    this->head = *pos;
-    this->size = 1;
-    this->storage[*pos].value = value;
-    this->storage[*pos].next = *pos;
-    this->storage[*pos].previous = *pos;
-    return LIST_OP_OK;
-}
-
 ListOpResult SwiftyList::get(size_t pos, ListElem *value) {
     PERFORM_CHECKS;
     if (pos >= this->size)
@@ -131,8 +109,8 @@ ListOpResult SwiftyList::get(size_t pos, ListElem *value) {
     if (this->optimized) {
         *value = this->storage[pos + 1].value;
     } else {
-        size_t iterator = this->head;
-        for (size_t i = 0; i < pos; i++) {
+        size_t iterator = 0;
+        for (size_t i = 0; i <= pos; i++) {
             iterator = this->storage[iterator].next;
         }
         *value = this->storage[iterator].value;
@@ -147,7 +125,7 @@ ListOpResult SwiftyList::set(size_t pos, const ListElem value) {
     if (this->optimized) {
         this->storage[pos + 1].value = value;
     } else {
-        size_t iterator = this->head;
+        size_t iterator = this->storage[0].next;
         for (size_t i = 0; i < pos; i++) {
             iterator = this->storage[iterator].next;
         }
@@ -176,7 +154,7 @@ ListOpResult SwiftyList::reallocate(bool onlyUp) {
     if (newCapacity == this->capacity)
         return LIST_OP_OK;
     
-    SwiftyListNode *newStorage = (SwiftyListNode *) realloc(this->storage, (newCapacity + 1) * sizeof(SwiftyListNode));
+    SwiftyListNode *const newStorage = (SwiftyListNode *) realloc(this->storage, (newCapacity + 1) * sizeof(SwiftyListNode));
     if (newStorage == NULL)
         return LIST_OP_NOMEM;
     this->storage = newStorage;
@@ -186,12 +164,12 @@ ListOpResult SwiftyList::reallocate(bool onlyUp) {
 
 ListOpResult SwiftyList::print() {
     PERFORM_CHECKS;
-    size_t pos = this->head;
+    size_t pos = this->storage[0].next;
     if (pos == 0 || this->size == 0)
         return LIST_OP_OK;
     while (true) {
         printf("%d ", this->storage[pos].value);
-        if (pos == this->tail)
+        if (pos == this->storage[0].previous)
             break;
         pos = this->storage[pos].next;
     }
@@ -203,14 +181,14 @@ ListOpResult SwiftyList::search(size_t *pos, const ListElem value) {
     if (this->size == 0) {
         return LIST_OP_NOTFOUND;
     }
-    *pos = this->head;
+    *pos = this->storage[0].next;
     while (true) {
         if (this->storage[*pos].value == value) {
             (*pos)--;
             return LIST_OP_OK;
         }
         
-        if (*pos == this->tail)
+        if (*pos == this->storage[0].previous)
             break;
         *pos = this->storage[*pos].next;
     }
@@ -219,7 +197,7 @@ ListOpResult SwiftyList::search(size_t *pos, const ListElem value) {
 
 SwiftyListParams::SwiftyListParams(short int verbose, char *logDir, bool useChecks, FILE *logFile) {
     this->verbose = verbose;
-    _ListStringView logDirString = {};
+    ListStringView logDirString = {};
     if (logDir != NULL)
         logDirString.len = strlen(logDir);
     logDirString.storage = logDir;
@@ -228,167 +206,106 @@ SwiftyListParams::SwiftyListParams(short int verbose, char *logDir, bool useChec
     this->logFile = logFile;
 }
 
+short int SwiftyListParams::getVerbose() {
+    return this->verbose;
+}
+
+bool SwiftyListParams::getChecks() {
+    return this->useChecks;
+}
+
+ListStringView SwiftyListParams::getLogDir() {
+    return this->logDir;
+}
+
+FILE *SwiftyListParams::getLogFile() {
+    return this->logFile;
+}
+
 ListOpResult SwiftyList::remove(size_t pos) {
+    return this->pop(pos, nullptr);
+}
+
+ListOpResult SwiftyList::swap(size_t firstPos, size_t secondPos) {
+    if (firstPos >= this->size || secondPos >= this->size )
+        return LIST_OP_OVERFLOW;
+    size_t first  = firstPos;
+    size_t second = secondPos;
+    if (!this->optimized){
+        size_t iterator = 0;
+        for (size_t i = 0; i <= firstPos; i++) {
+            iterator = this->storage[iterator].next;
+        }
+        first = iterator;
+    } else {
+        first++;
+    }
+
+    if (!this->optimized){
+        size_t iterator = 0;
+        for (size_t i = 0; i <= secondPos; i++) {
+            iterator = this->storage[iterator].next;
+        }
+        second = iterator;
+    } else {
+        second++;
+    }
+
+    ListElem tmp = this->storage[first].value;
+    this->storage[first].value = this->storage[second].value;
+    this->storage[second].value = tmp;
+    return LIST_OP_OK;
+}
+
+ListOpResult SwiftyList::pop(size_t pos, ListElem *value) {
     PERFORM_CHECKS;
     if (pos >= this->size)
         return LIST_OP_UNDERFLOW;
-    
-    if (this->size == 1)
-        return this->clear();
-    
-    if (pos == 0) {
-        ListElem tmp = 0;
-        return this->popFront(&tmp);
-    } else if (pos + 1 == this->size) {
-        ListElem tmp = 0;
-        return this->popBack(&tmp);
+    if (!this->optimized){
+        size_t iterator = 0;
+        for (size_t i = 0; i <= pos; i++) {
+            iterator = this->storage[iterator].next;
+        }
+        pos = iterator;
+    } else {
+        pos++;
     }
-    
-    size_t iterator = this->head;
-    for (size_t i = 0; i < pos; i++) {
-        iterator = this->storage[iterator].next;
-    }
-    
-    this->swapPhysicOnly(iterator - 1, this->size - 1);
-    iterator = this->size;
-    
-    size_t nextInd = this->storage[iterator].next;
-    size_t prevInd = this->storage[iterator].previous;
-    this->storage[prevInd].next = nextInd;
-    this->storage[nextInd].previous = prevInd;
-    this->size--;
-    return LIST_OP_OK;
-}
+    if (pos != this->size - 1)
+        this->optimized = false;
 
-void SwiftyList::swapValues(size_t firstPos, size_t secondPos) {
-    firstPos++;
-    secondPos++;
-    
-    ListElem tmp = this->storage[firstPos].value;
-    this->storage[firstPos].value = this->storage[secondPos].value;
-    this->storage[secondPos].value = tmp;
-}
-
-ListOpResult SwiftyList::popBack(ListElem *value) {
-    PERFORM_CHECKS;
-    if (this->size == 0)
-        return LIST_OP_UNDERFLOW;
-    this->swapPhysicOnly(this->tail - 1, this->size - 1);
-    this->tail = this->size;
-    size_t lastTail = this->tail;
-    *value = this->storage[lastTail].value;
-    size_t prevTail = this->storage[lastTail].previous;
-    
-    if (this->size == 1) {
-        this->clear();
-        return LIST_OP_OK;
+    if (value != nullptr) {
+        *value = this->storage[pos].value;
     }
-    
-    this->tail = prevTail;
-    
-    this->storage[prevTail].next = this->head;
-    this->storage[this->head].previous = prevTail;
-    
+
+    this->swapPhysicOnly(pos - 1, this->size - 1);
+    pos = this->size;
+
+    this->storage[this->storage[pos].previous].next = this->storage[pos].next;
+    this->storage[this->storage[pos].next].previous = this->storage[pos].previous;
+
     this->size--;
-    
     this->reallocate(false);
     return LIST_OP_OK;
+}
+
+
+ListOpResult SwiftyList::popBack(ListElem *value) {
+    return this->pop(this->size - 1, value);
 }
 
 ListOpResult SwiftyList::popFront(ListElem *value) {
-    PERFORM_CHECKS;
-    this->optimized = false;
-    if (this->size == 0)
-        return LIST_OP_UNDERFLOW;
-    this->swapPhysicOnly(this->head - 1, this->size -1);
-    this->head = this->size;
-    size_t lastHead = this->head;
-    *value = this->storage[lastHead].value;
-    size_t nextHead = this->storage[lastHead].next;
-    
-    if (this->size == 1) {
-        this->clear();
-        return LIST_OP_OK;
-    }
-    
-    this->head = nextHead;
-    
-    this->storage[nextHead].previous = this->tail;
-    this->storage[this->tail].next = nextHead;
-    
-    this->size--;
-    this->reallocate(false);
-    
-    return LIST_OP_OK;
+    return this->pop(0, value);
 }
 
 ListOpResult SwiftyList::optimize() {
     PERFORM_CHECKS;
-    size_t sumSize = this->size;
-    this->swapPhysicOnly(0, this->head - 1);
-    for (size_t i = 1; i <= sumSize; i++) {
+
+    for (size_t i = 0; i < this->size; i++) {
         size_t nextPos = this->storage[i].next - 1;
         if (i < nextPos)
             this->swapPhysicOnly(i, nextPos);
     }
-    this->head = 1;
-    this->tail = this->size;
     this->optimized = true;
-    return LIST_OP_OK;
-}
-
-ListOpResult SwiftyList::swap(size_t firstPos, size_t secondPos) {
-    PERFORM_CHECKS;
-    if (firstPos + 1 >= this->size || secondPos + 1 >= this->size)
-        return LIST_OP_UNDERFLOW;
-    size_t first = 0;
-    size_t second = 0;
-    
-    if (this->optimized) {
-        first = firstPos + 1;
-        second = secondPos + 1;
-    } else {
-        first = this->head;
-        for (size_t i = 0; i < firstPos; i++) {
-            first = this->storage[first].next;
-        }
-        
-        second = this->head;
-        for (size_t i = 0; i < firstPos; i++) {
-            second = this->storage[second].next;
-        }
-    }
-    
-    size_t firstPrev = this->storage[first].previous;
-    size_t firstNext = this->storage[first].next;
-    
-    size_t secondPrev = this->storage[second].previous;
-    size_t secondNext = this->storage[second].next;
-    
-    this->storage[firstPrev].next = second;
-    this->storage[firstNext].previous = second;
-    
-    this->storage[secondPrev].next = first;
-    this->storage[secondNext].previous = first;
-    
-    this->storage[first].previous = secondPrev;
-    this->storage[first].next = secondNext;
-    
-    this->storage[second].previous = firstPrev;
-    this->storage[second].next = firstNext;
-    
-    if (this->tail == first) {
-        this->tail = second;
-    } else if (this->tail == second) {
-        this->tail = first;
-    }
-    
-    if (this->head == second) {
-        this->head = first;
-    } else if (this->head == first) {
-        this->head = second;
-    }
-    
     return LIST_OP_OK;
 }
 
@@ -405,23 +322,18 @@ SwiftyList::~SwiftyList() {
 }
 
 ListOpResult SwiftyList::checkUp() {
-    size_t pos = this->head;
-    
     if (this->size == 0)
         return LIST_OP_OK;
-    
-    for (size_t i = 0; i < this->size; i++) {
+
+    size_t pos = 0;
+    for (size_t i = 0; i <= this->size; i++) {
         SwiftyListNode node = this->storage[pos];
         if ((node.next == pos || node.previous == pos) && this->size > 1)
             return LIST_OP_CORRUPTED;
-        if (pos == this->tail) {
-            if (i + 1 != this->size)
-                return LIST_OP_CORRUPTED;
-        }
         pos = node.next;
     }
-    
-    if (pos != this->head)
+
+    if (pos != 0)
         return LIST_OP_CORRUPTED;
     
     return LIST_OP_OK;
@@ -433,39 +345,16 @@ void SwiftyList::swapPhysicOnly(size_t firstPos, size_t secondPos) {
     if (secondPos == firstPos)
         return;
     this->optimized = false;
-    if (firstPos > secondPos || this->storage[firstPos].next == firstPos) {
-        size_t tmp = firstPos;
-        firstPos = secondPos;
-        secondPos = tmp;
-    }
 
     if (this->storage[firstPos].previous == secondPos) {
-        size_t tmp = firstPos;
+        size_t tmpPos = firstPos;
         firstPos = secondPos;
-        secondPos = tmp;
+        secondPos = tmpPos;
     }
-    
+
     const SwiftyListNode tmpFirst = this->storage[firstPos];
     this->storage[firstPos] = this->storage[secondPos];
     this->storage[secondPos] = tmpFirst;
-    const size_t tmpHead = this->head;
-    const size_t tmpTail = this->tail;
-    if ((firstPos == this->head && secondPos == this->tail) ||
-        (secondPos == this->head && firstPos == this->tail)) {
-        this->head = this->tail;
-        this->tail = tmpHead;
-    } else {
-        if (tmpHead == firstPos) {
-            this->head = secondPos;
-        } else if (tmpHead == secondPos) {
-            this->head = firstPos;
-        }
-        if (tmpTail == secondPos) {
-            this->tail = firstPos;
-        } else if (tmpTail == firstPos) {
-            this->tail = secondPos;
-        }
-    }
     
     this->storage[tmpFirst.previous].next = secondPos;
     this->storage[this->storage[firstPos].next].previous = firstPos;
@@ -476,10 +365,6 @@ void SwiftyList::swapPhysicOnly(size_t firstPos, size_t secondPos) {
         tmpFirst.previous == secondPos) {
         this->storage[secondPos].next = firstPos;
         this->storage[firstPos].previous = secondPos;
-        if (this->size == 2){
-            this->storage[firstPos].next = secondPos;
-            this->storage[secondPos].previous = firstPos;
-        }
     } else {
         this->storage[tmpFirst.next].previous = secondPos;
         this->storage[this->storage[firstPos].previous].next = firstPos;
@@ -495,6 +380,10 @@ ListOpResult SwiftyList::deOptimize(){
         this->swapPhysicOnly(rPos % this->size, lPos % this->size);
     }
     return LIST_OP_OK;
+}
+
+ListOpResult SwiftyList::shrinkToFit() {
+    return this->resize(0);
 }
 
 #undef INITIAL_INCREASE

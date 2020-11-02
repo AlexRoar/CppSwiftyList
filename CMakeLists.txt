@@ -26,8 +26,9 @@ add_executable(SwiftyListExample
 
 add_executable(SwiftyListTests
         Examples/SLTests.cpp
+        ${SL_SOURCES}
         )
-target_link_libraries(SwiftyListTests gtest gtest_main SwiftyList)
+target_link_libraries(SwiftyListTests gtest gtest_main)
 target_link_libraries(SwiftyListExample SwiftyList)
 add_test(SwiftyListTests SwiftyListTests)
 

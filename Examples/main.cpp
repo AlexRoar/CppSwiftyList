@@ -11,7 +11,7 @@ int main() {
     SwiftyList* list = new SwiftyList(0, 2, NULL, NULL, false);
     ListGraphDumper* dumper = new ListGraphDumper(list, (char*)"grapfStructure.gv");
     
-    const size_t nElem = 10e7;
+    const size_t nElem = 500;
     printf("Pushing %zu elements...\n", nElem);
     TIME_MEASURED({
         for (size_t i = 0; i < nElem; i++) {
@@ -35,8 +35,8 @@ int main() {
 //    TIME_MEASURED({
 //        list->deOptimize();
 //    })
-    if (nElem < 50)
-        dumper->build("deoptimized.png");
+//    if (nElem < 50)
+        dumper->build("deoptimized.svg");
     
 //    printf("\nSet-get operation on %zu elements ...\n", nElem);
 //    TIME_MEASURED({
@@ -52,8 +52,8 @@ int main() {
         list->optimize();
     })
     
-    if (nElem < 50)
-        dumper->build("optimized.png");
+//    if (nElem < 50)
+        dumper->build("optimized.svg");
     
 //    printf("\nSet-get operation on %zu elements ...\n", nElem);
 //    TIME_MEASURED({

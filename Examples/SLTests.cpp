@@ -7,11 +7,11 @@
 #include "SwiftyList.hpp"
 
 TEST(SwiftyListTests, checkUp) {
-    SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, false);
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, false);
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
     list->pushBack(1);
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
-    for(size_t i = 0; i < 100; i++) {
+    for (size_t i = 0; i < 100; i++) {
         list->pushFront(i);
     }
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
@@ -28,16 +28,16 @@ TEST(SwiftyListTests, checkUp) {
 
 
 TEST(SwiftyListTests, pushBack) {
-    SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, false);
-    for(size_t i = 0; i < 100; i++) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, false);
+    for (size_t i = 0; i < 100; i++) {
         list->pushBack(i);
     }
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
     EXPECT_EQ(list->isOptimized(), true);
-    for(size_t i = 0; i < 100; i++) {
+    for (size_t i = 0; i < 100; i++) {
         EXPECT_EQ(list->storage[1 + i].value, i);
     }
-    for(size_t i = 0; i < 100; i++) {
+    for (size_t i = 0; i < 100; i++) {
         int val = 0;
         list->get(i, &val);
         EXPECT_EQ(val, i);
@@ -46,17 +46,17 @@ TEST(SwiftyListTests, pushBack) {
 }
 
 TEST(SwiftyListTests, pushFront) {
-    SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, 0);
-    for(size_t i = 0; i < 100; i++) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    for (size_t i = 0; i < 100; i++) {
         list->pushFront(i);
     }
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
-    for(size_t i = 99; ; i--) {
+    for (size_t i = 99;; i--) {
         EXPECT_EQ(list->storage[1 + i].value, i);
         if (i == 0)
             break;
     }
-    for(size_t i = 0; i < 100; i++) {
+    for (size_t i = 0; i < 100; i++) {
         int val = 0;
         list->get(i, &val);
         EXPECT_EQ(val, 100 - i - 1);
@@ -65,12 +65,12 @@ TEST(SwiftyListTests, pushFront) {
 }
 
 TEST(SwiftyListTests, popFront) {
-    SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, 0);
-    for(size_t i = 0; i < 100; i++) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    for (size_t i = 0; i < 100; i++) {
         list->pushBack(i);
     }
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
-    for(size_t i = 0; i < 100; i++) {
+    for (size_t i = 0; i < 100; i++) {
         int value = 0;
         list->popFront(&value);
         EXPECT_EQ(value, i);
@@ -79,12 +79,12 @@ TEST(SwiftyListTests, popFront) {
 }
 
 TEST(SwiftyListTests, popBack) {
-    SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, 0);
-    for(size_t i = 0; i < 100; i++) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    for (size_t i = 0; i < 100; i++) {
         list->pushFront(i);
     }
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
-    for(size_t i = 0; i < 100; i++) {
+    for (size_t i = 0; i < 100; i++) {
         int value = 0;
         list->popBack(&value);
         EXPECT_EQ(value, i);
@@ -93,12 +93,12 @@ TEST(SwiftyListTests, popBack) {
 }
 
 TEST(SwiftyListTests, setGet) {
-    SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, 0);
-    for(size_t i = 0; i < 100; i++) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    for (size_t i = 0; i < 100; i++) {
         list->pushFront(i);
     }
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
-    for(size_t i = 0; i < 100; i++) {
+    for (size_t i = 0; i < 100; i++) {
         int value = rand();
         list->set(i, value);
         int gValue = 0;
@@ -109,23 +109,23 @@ TEST(SwiftyListTests, setGet) {
 }
 
 TEST(SwiftyListTests, search) {
-    SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, 0);
-    for(size_t i = 0; i < 100; i++) {
-        list->pushFront(2*i);
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    for (size_t i = 0; i < 100; i++) {
+        list->pushFront(2 * i);
     }
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
-    for(size_t i = 0; i < 100; i++) {
+    for (size_t i = 0; i < 100; i++) {
         size_t pos = 0;
-        list->search(&pos, 2*i);
+        list->search(&pos, 2 * i);
         EXPECT_EQ(pos, i);
     }
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
 }
 
 TEST(SwiftyListTests, relloacations) {
-    SwiftyList* list = new SwiftyList(10, 0, NULL, NULL, false);
+    SwiftyList *list = new SwiftyList(10, 0, NULL, NULL, false);
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
-    for(size_t i = 0; i < 10; i++) {
+    for (size_t i = 0; i < 10; i++) {
         list->pushBack(i);
     }
 
@@ -135,15 +135,15 @@ TEST(SwiftyListTests, relloacations) {
     int tmpVal = 0;
     list->popBack(&tmpVal);
     EXPECT_EQ(list->getCapacity(), 20);
-    for(size_t i = 0; i < 5; i++) {
+    for (size_t i = 0; i < 5; i++) {
         list->popBack(&tmpVal);
     }
     EXPECT_EQ(list->getCapacity(), 10);
 }
 
 TEST(SwiftyListTests, remove) {
-    SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, 0);
-    for(size_t i = 0; i < 10; i++) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    for (size_t i = 0; i < 10; i++) {
         list->pushBack(i);
     }
     // 0 1 2 3 4 5 6 7 8 9
@@ -166,7 +166,7 @@ TEST(SwiftyListTests, remove) {
 }
 
 TEST(SwiftyListTests, sideCases) {
-    SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, 0);
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
     list->pushBack(1);
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
 
@@ -187,9 +187,9 @@ TEST(SwiftyListTests, sideCases) {
 }
 
 TEST(SwiftyListTests, clear) {
-    SwiftyList* list = new SwiftyList(10, 0, NULL, NULL, false);
+    SwiftyList *list = new SwiftyList(10, 0, NULL, NULL, false);
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
-    for(size_t i = 0; i < 10; i++) {
+    for (size_t i = 0; i < 10; i++) {
         list->pushBack(i);
     }
 
@@ -214,7 +214,7 @@ TEST(SwiftyListTests, physicSwap) {
 //        dumper->build();
             EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
             list->swapPhysicOnly(rPos % testSize, lPos % testSize);
-            if (!(list->checkUp() == LIST_OP_OK)){
+            if (!(list->checkUp() == LIST_OP_OK)) {
                 printf("%d: %d <-> %d\n", testSize, rPos % testSize, lPos % testSize);
             }
             EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
@@ -258,4 +258,232 @@ TEST(SwiftyListTests, optimizer) {
         EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
         EXPECT_TRUE(list->isOptimized());
     }
+}
+
+TEST(SwiftyListTests, insert) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    list->optimized = false;
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    list->insert(0, 5);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+
+    int tmp = 0;
+    list->get(0, &tmp);
+
+
+    list->insert(0, 5);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+
+    tmp = 0;
+    list->get(0, &tmp);
+    EXPECT_EQ(tmp, 5);
+
+    tmp = 0;
+    list->get(1, &tmp);
+    EXPECT_EQ(tmp, 5);
+}
+
+TEST(SwiftyListTests, empty) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    EXPECT_EQ(0, list->getSize());
+    EXPECT_TRUE(list->isEmpty());
+    EXPECT_TRUE(list->isOptimized());
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+}
+
+TEST(SwiftyListTests, pushPop) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    for (size_t i = 0; i < 1000; i++) {
+        if (i % 2 == 0)
+            list->pushBack(i);
+        else
+            list->pushFront(i);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+    for (size_t i = 0; i < 1000; i++) {
+        int val = 0;
+        if (i % 2 == 0)
+            list->popBack(&val);
+        else
+            list->popFront(&val);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+    EXPECT_TRUE(list->isEmpty());
+}
+
+TEST(SwiftyListTests, randomRemove) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    for (size_t i = 0; i < 1000; i++) {
+        if (i % 2 == 0)
+            list->pushBack(i);
+        else
+            list->pushFront(i);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+    for (size_t i = 0; i < 1000; i++) {
+        list->remove(rand() % list->getSize());
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+    EXPECT_TRUE(list->isEmpty());
+}
+
+TEST(SwiftyListTests, capacity) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    for (size_t i = 0; i < 1000; i++) {
+        if (i % 2 == 0)
+            list->pushBack(i);
+        else
+            list->pushFront(i);
+        EXPECT_GE(list->getCapacity(), i + 1);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+}
+
+TEST(SwiftyListTests, resize0) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    for (size_t i = 0; i < 1000; i++) {
+        if (i % 2 == 0)
+            list->pushBack(i);
+        else
+            list->pushFront(i);
+        list->resize(0);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+        EXPECT_GE(list->getCapacity(), i + 1);
+    }
+
+    list->resize(0);
+    EXPECT_GE(list->getCapacity(), list->getSize());
+
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+}
+
+TEST(SwiftyListTests, resizeALot) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    for (size_t i = 0; i < 1000; i++) {
+        if (i % 2 == 0)
+            list->pushBack(i);
+        else
+            list->pushFront(i);
+        list->resize(list->getSize() * 2);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+        EXPECT_GE(list->getCapacity(), i + 1);
+    }
+
+    list->resize(list->getSize() * 2);
+    EXPECT_GE(list->getCapacity(), list->getSize());
+
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+}
+
+TEST(SwiftyListTests, clearBig) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    for (size_t i = 0; i < 1000; i++) {
+        if (i % 2 == 0)
+            list->pushBack(i);
+        else
+            list->pushFront(i);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+
+    list->clear();
+    EXPECT_GE(list->getCapacity(), list->getSize());
+    EXPECT_TRUE(list->isEmpty());
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+}
+
+TEST(SwiftyListTests, shrinkToFit) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    for (size_t i = 0; i < 1000; i++) {
+        if (i % 2 == 0)
+            list->pushBack(i);
+        else
+            list->pushFront(i);
+        list->shrinkToFit();
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+
+    list->shrinkToFit();
+    EXPECT_GE(list->getCapacity(), list->getSize());
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+}
+
+TEST(SwiftyListTests, deoptimize) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    for (size_t i = 0; i < 1000; i++) {
+        if (i % 2 == 0)
+            list->pushBack(i);
+        else
+            list->pushFront(i);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+
+    list->deOptimize();
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+}
+
+TEST(SwiftyListTests, swap) {
+    SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    for (size_t i = 0; i < 1000; i++) {
+        list->pushBack(i);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+
+    for (size_t i = 0; i < 5000; i++) {
+        int firstElem = 0;
+        int secondElem = 0;
+        int firstElemInit = 0;
+        int secondElemInit = 0;
+
+        const int firstPos = rand() % list->getSize();
+        const int secondPos = rand() % list->getSize();
+
+        list->get(firstPos, &firstElemInit);
+        list->get(secondPos, &secondElemInit);
+
+        list->swap(firstPos, secondPos);
+
+        list->get(firstPos, &firstElem);
+        list->get(secondPos, &secondElem);
+
+        EXPECT_EQ(firstElem, secondElemInit);
+        EXPECT_EQ(firstElemInit, secondElem);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+
+    list->deOptimize();
+
+    for (size_t i = 0; i < 5000; i++) {
+        int firstElem = 0;
+        int secondElem = 0;
+        int firstElemInit = 0;
+        int secondElemInit = 0;
+
+        const int firstPos = rand() % list->getSize();
+        const int secondPos = rand() % list->getSize();
+
+        list->get(firstPos, &firstElemInit);
+        list->get(secondPos, &secondElemInit);
+
+        list->swap(firstPos, secondPos);
+
+        list->get(firstPos, &firstElem);
+        list->get(secondPos, &secondElem);
+
+        EXPECT_EQ(firstElem, secondElemInit);
+        EXPECT_EQ(firstElemInit, secondElem);
+        EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
+    }
+
+
+    EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
 }
