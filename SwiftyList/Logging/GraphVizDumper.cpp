@@ -5,7 +5,7 @@
 //  Created by Александр Дремов on 31.10.2020.
 //
 
-#include "GraphVizDumper.hpp"
+#include "SwiftyList.hpp"
 #include <stdio.h>
 #include <string.h>
 

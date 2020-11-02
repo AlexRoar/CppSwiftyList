@@ -5,7 +5,6 @@
 #include "gtest/gtest.h"
 #include <stdlib.h>
 #include "SwiftyList.hpp"
-#include "GraphVizDumper.hpp"
 
 TEST(SwiftyListTests, checkUp) {
     SwiftyList* list = new SwiftyList(0, 0, NULL, NULL, false);
@@ -38,6 +37,11 @@ TEST(SwiftyListTests, pushBack) {
     for(size_t i = 0; i < 100; i++) {
         EXPECT_EQ(list->storage[1 + i].value, i);
     }
+    for(size_t i = 0; i < 100; i++) {
+        int val = 0;
+        list->get(i, &val);
+        EXPECT_EQ(val, i);
+    }
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
 }
 
@@ -51,6 +55,11 @@ TEST(SwiftyListTests, pushFront) {
         EXPECT_EQ(list->storage[1 + i].value, i);
         if (i == 0)
             break;
+    }
+    for(size_t i = 0; i < 100; i++) {
+        int val = 0;
+        list->get(i, &val);
+        EXPECT_EQ(val, 100 - i - 1);
     }
     EXPECT_TRUE(list->checkUp() == LIST_OP_OK);
 }
@@ -227,7 +236,6 @@ TEST(SwiftyListTests, physicSwap) {
 }
 
 TEST(SwiftyListTests, optimizer) {
-
     for (int testSize = 1; testSize < 100; testSize++) {
         SwiftyList *list = new SwiftyList(0, 0, NULL, NULL, 0);
         for (size_t i = 0; i < testSize; i++) {

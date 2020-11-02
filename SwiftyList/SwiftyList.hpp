@@ -92,8 +92,8 @@ struct SwiftyList {
     ListOpResult checkUp     ();
     ListOpResult print       ();
     
-    size_t getSize();
-    size_t getCapacity();
+    size_t getSize() const;
+    size_t getCapacity() const;
     
     bool isOptimized();
     bool isEmpty();
@@ -101,5 +101,19 @@ struct SwiftyList {
     SwiftyList(size_t initialSize, short int verbose, char* logDir, FILE * logFile, bool useChecks);
     ~SwiftyList();
 };
+
+struct ListGraphDumper {
+// private:
+    FILE* file;
+    SwiftyList* list;
+    char* filePath;
+    void dumpNodes();
+    void dumpNode(size_t node);
+    void drawGraphs();
+// public:
+    ListGraphDumper(SwiftyList* list, char* tmpFile);
+    void build(char* imgPath);
+};
+
 
 #endif /* SwiftyList_hpp */
