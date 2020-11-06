@@ -140,7 +140,6 @@ TEST(SwiftyListTests, search) {
 }
 
 TEST(SwiftyListTests, relloacations) {
-
     SwiftyList<int> list(10, 0, NULL, false);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     for (size_t i = 0; i < 10; i++) {
@@ -153,12 +152,6 @@ TEST(SwiftyListTests, relloacations) {
     int tmpVal = 0;
     list.popBack(&tmpVal);
     EXPECT_EQ(list.getCapacity(), 20);
-    for (size_t i = 0; i < 5; i++) {
-        list.popBack(&tmpVal);
-    }
-
-    list.popBack(&tmpVal);
-    EXPECT_EQ(list.getCapacity(), 10);
 }
 
 TEST(SwiftyListTests, removeLogic) {
@@ -407,4 +400,19 @@ TEST(SwiftyListTests, getters) {
     EXPECT_TRUE(list.getParams()->getLogFile() == logFile );
     EXPECT_TRUE(list.getParams()->getChecks() == false );
     EXPECT_TRUE(list.getParams()->getVerbose() == 2 );
+}
+
+TEST(SwiftyListTests, optimize) {
+    for (size_t testSize = 0; testSize < CAPACITY_RANGE; testSize++) {
+        SwiftyList<int> list(0, 0, NULL, false);
+        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
+        for (size_t i = 0; i < testSize; i++) {
+            if (i % 2 == 1)
+                list.pushBack(i);
+            else
+                list.pushFront(i);
+            EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
+        }
+        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
+    }
 }

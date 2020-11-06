@@ -8,11 +8,11 @@
 #ifndef SwiftyList_hpp
 #define SwiftyList_hpp
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 
-#define INITIAL_INCREASE 16
+const size_t INITIAL_INCREASE = 16;
 #define PERFORM_CHECKS {if (this->useChecks){ListOpResult resCheck = this->checkUp(); if (resCheck != LIST_OP_OK) return resCheck;}}
 #define DOTPATH "/usr/local/bin/dot"
 
@@ -34,101 +34,29 @@ enum ListOpResult {
 };
 
 template<typename ListElem>
-struct SwiftyListNode {
-    ListElem value;
-    size_t next;
-    size_t previous;
-    bool   valid;
-};
-
-struct SwiftyListParams {
-    //private:
-    short int verbose;
-    bool useChecks;
-    FILE *logFile;
-
-    //public:
-
-    SwiftyListParams(short int verbose, bool useChecks, FILE *logFile) {
-        this->verbose = verbose;
-        this->useChecks = useChecks;
-        this->logFile = logFile;
-    }
-
-    short int getVerbose() {
-        return this->verbose;
-    }
-
-    bool getChecks() {
-        return this->useChecks;
-    }
-
-    FILE *getLogFile() {
-        return this->logFile;
-    }
-};
-
-
-template<typename ListElem>
 struct SwiftyList {
 private:
-    SwiftyListNode<ListElem> *storage;
+    struct ListGraphDumper;
+    struct SwiftyListNode;
+    struct SwiftyListParams;
+
+    SwiftyList<ListElem>::ListGraphDumper *dumper;
+    SwiftyList<ListElem>::SwiftyListNode *storage;
+    SwiftyList<ListElem>::SwiftyListParams *params;
+
     bool optimized;
     bool useChecks;
+
     size_t capacity;
     size_t size;
-    struct SwiftyListParams *params;
 
     size_t freePtr;
     size_t freeSize;
-
-    size_t inline getFreePos(bool mutating=false) {
-        if (freeSize != 0) {
-            size_t newPos = this->freePtr;
-            if (mutating) {
-                this->freeSize--;
-                this->freePtr = this->storage[newPos].next;
-            }
-            this->storage[this->freePtr].valid = false;
-            return newPos;
-        }
-        if (this->reallocate(true) != LIST_OP_OK)
-            return 0;
-        this->storage[ this->size + 1].valid = true;
-        return  this->size + 1;
-    }
-
-    ListOpResult reallocate(bool onlyUp) {
-        if (this->freeSize != 0)
-            return LIST_OP_OK;
-        if ((this->size < this->capacity) && onlyUp) return LIST_OP_OK;
-        size_t newCapacity = this->capacity;
-        if (this->size >= this->capacity)
-            newCapacity = (this->capacity == 0) ? INITIAL_INCREASE : this->capacity * 2;
-        if (!onlyUp) {
-            if (this->capacity >= this->size * 4) {
-                newCapacity = this->capacity / 2;
-            }
-        }
-
-        if (this->capacity == newCapacity)
-            return LIST_OP_OK;
-
-        SwiftyListNode<ListElem> *const newStorage = (SwiftyListNode<ListElem> *) realloc(this->storage,
-                                                                                          (newCapacity + 1) *
-                                                                                          sizeof(SwiftyListNode<ListElem>));
-        if (newStorage == NULL)
-            return LIST_OP_NOMEM;
-        this->storage = newStorage;
-        this->capacity = newCapacity;
-        return LIST_OP_OK;
-    }
 
     struct ListGraphDumper {
     private:
         FILE *file;
         char *filePath;
-
         SwiftyList<ListElem> *list;
 
         void dumpNodes() {
@@ -182,11 +110,7 @@ private:
         }
 
     public:
-        ListGraphDumper(SwiftyList<ListElem> *list, char *tmpFile) {
-            this->filePath = tmpFile;
-            this->list = list;
-        }
-
+        ListGraphDumper(SwiftyList<ListElem> *list, char *filePath) : filePath(filePath), list(list), file(nullptr) {}
 
         void build(char *imgPath) {
             this->file = fopen(this->filePath, "wb");
@@ -204,13 +128,76 @@ private:
         }
     };
 
-    SwiftyList<ListElem>::ListGraphDumper *dumper;
+    struct SwiftyListNode {
+        ListElem value;
+        size_t next;
+        size_t previous;
+        bool   valid;
+    };
 
-    size_t inline logicToPhysic(size_t pos) {
+    struct SwiftyListParams {
+    private:
+        short int verbose;
+        bool useChecks;
+        FILE *logFile;
+
+    public:
+        SwiftyListParams(short verbose, bool useChecks, FILE *logFile) : verbose(verbose), useChecks(useChecks),
+                                                                         logFile(logFile) {}
+        short int getVerbose() const {
+            return this->verbose;
+        }
+        bool getChecks() const {
+            return this->useChecks;
+        }
+        FILE *getLogFile() const {
+            return this->logFile;
+        }
+    };
+
+    size_t getFreePos(bool mutating = false) {
+        if (freeSize != 0) {
+            size_t newPos = this->freePtr;
+            if (mutating) {
+                this->freeSize--;
+                this->freePtr = this->storage[newPos].next;
+            }
+            this->storage[this->freePtr].valid = false;
+            return newPos;
+        }
+        if (this->reallocate() != LIST_OP_OK)
+            return 0;
+        this->storage[ this->size + 1].valid = true;
+        return  this->size + 1;
+    }
+
+    ListOpResult reallocate() {
+        if (this->freeSize != 0)
+            return LIST_OP_OK;
+        if (this->size < this->capacity) return LIST_OP_OK;
+        size_t newCapacity = this->capacity;
+        if (this->size >= this->capacity)
+            newCapacity = (this->capacity == 0) ? INITIAL_INCREASE : this->capacity * 2;
+
+        if (this->capacity == newCapacity)
+            return LIST_OP_OK;
+
+        SwiftyListNode *const newStorage = (SwiftyListNode *) realloc(this->storage,
+                                                                                          (newCapacity + 1) *
+                                                                                          sizeof(SwiftyListNode));
+        if (newStorage == NULL)
+            return LIST_OP_NOMEM;
+        this->storage = newStorage;
+        this->capacity = newCapacity;
+        return LIST_OP_OK;
+    }
+
+
+    size_t logicToPhysic(size_t pos) const {
         if (this->optimized) {
             return pos + 1;
         } else {
-            size_t volatile iterator = 0;
+            size_t iterator = 0;
             for (size_t i = 0; i <= pos; i++) {
                 iterator = this->storage[iterator].next;
             }
@@ -229,9 +216,7 @@ private:
         int i = 0;
         for (; i < len - sizeof(".svg"); ++i)
             tmp_s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
-
         strcpy(tmp_s + i, ".svg");
-
         return tmp_s;
     }
 
@@ -258,7 +243,7 @@ public:
             useChecks(useChecks),
             freeSize(0),
             freePtr(0) {
-        this->storage = (SwiftyListNode<ListElem> *) calloc(initialSize + 1, sizeof(SwiftyListNode<ListElem>));
+        this->storage = (SwiftyListNode *) calloc(initialSize + 1, sizeof(SwiftyListNode));
         this->params = new SwiftyListParams(verbose, useChecks, logFile);
         this->dumper = new SwiftyList::ListGraphDumper(this, "tmp.gv");
         this->storage[0].next = 0;
@@ -421,21 +406,41 @@ public:
         this->storage[0].previous = 0;
         this->freeSize = 0;
         this->freePtr  = 0;
-        this->reallocate(false);
+        this->reallocate();
         return LIST_OP_OK;
     }
 
     ListOpResult optimize() {
         PERFORM_CHECKS;
+        SwiftyList<ListElem>::SwiftyListNode *newStorage = (SwiftyList<ListElem>::SwiftyListNode*)(calloc(this->size + 1, sizeof(SwiftyList<ListElem>::SwiftyListNode)));
+        if (newStorage == nullptr)
+            return LIST_OP_NOMEM;
+        newStorage[0] = this->storage[0];
+        size_t iterator = this->storage[0].next;
+        for (size_t i = 0; i < this->size; i++) {
+            newStorage[i + 1] = this->storage[iterator];
+            iterator = this->storage[iterator].next;
+            newStorage[i + 1].previous = i;
+            newStorage[i].next = i + 1;
+            newStorage[i].valid = true;
+            if (i + 1 == this->size) {
+                newStorage[i + 1].next = 0;
+            }
+        }
+        this->optimized = true;
+        this->freePtr = 0;
+        this->freeSize = 0;
+        this->storage = newStorage;
+        return LIST_OP_OK;
     }
 
-    ListOpResult checkUp() {
+    ListOpResult checkUp() const {
         if (this->size == 0)
             return LIST_OP_OK;
 
         size_t pos = 0;
         for (size_t i = 0; i <= this->size; i++) {
-            SwiftyListNode<ListElem> node = this->storage[pos];
+            SwiftyListNode node = this->storage[pos];
             if ((node.next == pos || node.previous == pos) && this->size > 1)
                 return LIST_OP_CORRUPTED;
             pos = node.next;
@@ -447,12 +452,12 @@ public:
         return LIST_OP_OK;
     }
 
-    ListOpResult deOptimize(){
+    ListOpResult deOptimize() {
         this->optimized = false;
         return LIST_OP_OK;
     }
 
-    ListOpResult search(size_t *pos, const ListElem value) {
+    ListOpResult search(size_t *pos, const ListElem value) const{
         PERFORM_CHECKS;
         if (this->size == 0) {
             return LIST_OP_NOTFOUND;
@@ -471,44 +476,41 @@ public:
         return LIST_OP_NOTFOUND;
     }
 
-    void dumpAll(const char* sectionName){
+    void dumpAll(const char* sectionName) const{
         this->setNewSection(sectionName);
         this->dumpData();
         this->dumpImage();
     }
 
-    void dumpData() {
-        fprintf(this->params->logFile, "\n<pre><code>\n");
-        if (this->params->logFile == NULL) return;
+    void dumpData() const{
+        FILE* logFile = this->params->getLogFile();
+        fprintf(logFile, "\n<pre><code>\n");
+        if (logFile == NULL) return;
 
-        fprintf(this->params->logFile, "SwiftyList [%p] {\n", this);
-        fprintf(this->params->logFile, "\tcapacity :  %zu\n", this->capacity);
-        fprintf(this->params->logFile, "\tsize     :  %zu\n", this->size);
-        fprintf(this->params->logFile, "\thead     :  %zu\n", this->storage[0].next);
-        fprintf(this->params->logFile, "\ttail     :  %zu\n", this->storage[0].previous);
-        fprintf(this->params->logFile, "\toptimized:  %d\n", this->optimized);
-        fprintf(this->params->logFile, "\tuseChecks:  %d\n", this->useChecks);
-        fprintf(this->params->logFile, "\tvalid    :  %s\n", (this->checkUp() == LIST_OP_OK)? "YES": "NO");
-        fprintf(this->params->logFile, "}\n");
+        fprintf(logFile, "SwiftyList [%p] {\n", this);
+        fprintf(logFile, "\tcapacity :  %zu\n", this->capacity);
+        fprintf(logFile, "\tsize     :  %zu\n", this->size);
+        fprintf(logFile, "\thead     :  %zu\n", this->storage[0].next);
+        fprintf(logFile, "\ttail     :  %zu\n", this->storage[0].previous);
+        fprintf(logFile, "\toptimized:  %d\n", this->optimized);
+        fprintf(logFile, "\tuseChecks:  %d\n", this->useChecks);
+        fprintf(logFile, "\tvalid    :  %s\n", (this->checkUp() == LIST_OP_OK)? "YES": "NO");
+        fprintf(logFile, "}\n");
 
-        fprintf(this->params->logFile, "\n</code></pre>\n");
+        fprintf(logFile, "\n</code></pre>\n");
     }
 
-    void setNewSection(const char *section) {
-        if (this->params->logFile != NULL)
-            fprintf(this->params->logFile, "<h2>%s</h2>\n", section);
+    void setNewSection(const char *section) const{
+        if (this->params->getLogFile() != NULL)
+            fprintf(this->params->getLogFile(), "<h2>%s</h2>\n", section);
     }
 
-    void dumpImage() {
+    void dumpImage() const{
         char *name = this->genRandomStringName(20);
         this->dumper->build(name);
-        if (this->params->logFile != NULL) fprintf(this->params->logFile, "<img src=\"%s\">\n", name);
+        if (this->params->getLogFile() != NULL) fprintf(this->params->getLogFile(), "<img src=\"%s\">\n", name);
         free(name);
     }
-
-//    ListOpResult shrinkToFit() {
-//        return this->resize(0);
-//    }
 
     size_t getSize() const {
         return this->size;
@@ -518,11 +520,11 @@ public:
         return this->capacity;
     }
 
-    bool isOptimized() {
+    bool isOptimized() const{
         return this->optimized;
     }
 
-    bool isEmpty() {
+    bool isEmpty() const{
         return this->size == 0;
     }
 
@@ -530,7 +532,7 @@ public:
         free(this->storage);
     }
 
-    SwiftyListParams *getParams() {
+    SwiftyListParams *getParams() const{
         return this->params;
     }
 
