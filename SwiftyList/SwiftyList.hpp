@@ -205,7 +205,7 @@ private:
         }
     }
 
-    char *genRandomStringName(int len) {
+    char *genRandomStringName(int len) const{
         len += sizeof(".svg");
         char *tmp_s = (char *) malloc((len + 2) * sizeof(char));
         static const char alphanum[] =
