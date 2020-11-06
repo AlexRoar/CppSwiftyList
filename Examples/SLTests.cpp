@@ -34,12 +34,12 @@ TEST(SwiftyListTests, pushBack) {
     EXPECT_EQ(list.isOptimized(), true);
     for (size_t i = 0; i < 100; i++) {
         int tmp = 0;
-        list.get(i, &tmp);
+        list.getLogic(i, &tmp);
         EXPECT_EQ(tmp, i);
     }
     for (size_t i = 0; i < 100; i++) {
         int val = 0;
-        list.get(i, &val);
+        list.getLogic(i, &val);
         EXPECT_EQ(val, i);
     }
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
@@ -54,7 +54,7 @@ TEST(SwiftyListTests, pushFront) {
         EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
         for (size_t i = 0; i < testSize; i++) {
             int tmp = 0;
-            EXPECT_TRUE(list.get(i, &tmp) == LIST_OP_OK);
+            EXPECT_TRUE(list.getLogic(i, &tmp) == LIST_OP_OK);
             EXPECT_EQ(tmp, testSize - i - 1);
         }
         EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
@@ -93,7 +93,7 @@ TEST(SwiftyListTests, popBack) {
     }
 }
 
-TEST(SwiftyListTests, setGet) {
+TEST(SwiftyListTests, setGetLogic) {
     for (size_t testSize = 0; testSize < CAPACITY_RANGE; testSize++) {
         SwiftyList<int> list(0, 0, NULL, 0);
         for (size_t i = 0; i < testSize; i++) {
@@ -103,9 +103,9 @@ TEST(SwiftyListTests, setGet) {
         EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
         for (size_t i = 0; i < testSize; i++) {
             int value = rand();
-            list.set(i, value);
+            list.setLogic(i, value);
             int gValue = 0;
-            list.get(i, &gValue);
+            list.getLogic(i, &gValue);
             EXPECT_EQ(value, gValue);
         }
 
@@ -113,9 +113,9 @@ TEST(SwiftyListTests, setGet) {
 
         for (size_t i = 0; i < testSize; i++) {
             int value = rand();
-            list.set(i, value);
+            list.setLogic(i, value);
             int gValue = 0;
-            list.get(i, &gValue);
+            list.getLogic(i, &gValue);
             EXPECT_EQ(value, gValue);
         }
 
@@ -161,25 +161,25 @@ TEST(SwiftyListTests, relloacations) {
     EXPECT_EQ(list.getCapacity(), 10);
 }
 
-TEST(SwiftyListTests, remove) {
+TEST(SwiftyListTests, removeLogic) {
     SwiftyList<int> list(0, 0, NULL, 0);
     for (size_t i = 0; i < 10; i++) {
         list.pushBack(i);
     }
     // 0 1 2 3 4 5 6 7 8 9
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-    list.remove(0);
+    list.removeLogic(0);
 
     // 1 2 3 4 5 6 7 8 9
     int val = 0;
-    list.get(0, &val);
+    list.getLogic(0, &val);
 
     EXPECT_EQ(val, 1);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
 
     // 1 2 3 5 6 7 8 9
-    list.remove(3);
-    list.get(3, &val);
+    list.removeLogic(3);
+    list.getLogic(3, &val);
 
     EXPECT_EQ(val, 5);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
@@ -191,15 +191,15 @@ TEST(SwiftyListTests, sideCases) {
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
 
     int val = 0;
-    list.get(0, &val);
-    EXPECT_TRUE(list.get(0, &val) == LIST_OP_OK);
+    list.getLogic(0, &val);
+    EXPECT_TRUE(list.getLogic(0, &val) == LIST_OP_OK);
     EXPECT_EQ(val, 1);
 
-    list.remove(0);
+    list.removeLogic(0);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-    EXPECT_TRUE(list.get(0, &val) != LIST_OP_OK);
+    EXPECT_TRUE(list.getLogic(0, &val) != LIST_OP_OK);
 
-    EXPECT_TRUE(list.remove(0) != LIST_OP_OK);
+    EXPECT_TRUE(list.removeLogic(0) != LIST_OP_OK);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
 
     list.pushFront(1);
@@ -218,79 +218,26 @@ TEST(SwiftyListTests, clear) {
     EXPECT_TRUE(list.getSize() == 0);
 }
 
-TEST(SwiftyListTests, physicSwap) {
-    for (int testSize = 1; testSize < CAPACITY_RANGE; testSize++) {
-        SwiftyList<int> list(0, 0, NULL, 0);
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-        for (size_t i = 0; i < testSize; i++) {
-            list.pushBack(i);
-        }
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-
-        for (size_t i = 0; i < 10; i++) {
-            int rPos = rand();
-            int lPos = rand();
-            EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-            list.swapPhysicOnly(rPos % testSize, lPos % testSize);
-            EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-            int tmp = 0;
-            for (size_t j = 0; j < testSize; j++) {
-                list.get(j, &tmp);
-                EXPECT_EQ(tmp, j);
-            }
-            if (tmp != testSize - 1)
-                break;
-        }
-    }
-}
-
-TEST(SwiftyListTests, optimizer) {
-    for (int testSize = 1; testSize < CAPACITY_RANGE; testSize++) {
-        SwiftyList<int> list(0, 0, NULL, 0);
-        for (size_t i = 0; i < testSize; i++) {
-            list.pushBack(i);
-        }
-
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-        for (size_t i = 0; i < 5000; i++) {
-            int rPos = rand();
-            int lPos = rand();
-            list.swapPhysicOnly(rPos % testSize, lPos % testSize);
-        }
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-        list.optimize();
-        EXPECT_TRUE(list.isOptimized());
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-        for (size_t i = 0; i < testSize; i++) {
-            int tmp = 0;
-            list.get(i, &tmp);
-            EXPECT_EQ(tmp, i);
-        }
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-        EXPECT_TRUE(list.isOptimized());
-    }
-}
-
-TEST(SwiftyListTests, insert) {
+TEST(SwiftyListTests, insertLogic) {
     SwiftyList<int> list(0, 0, NULL, 0);
     list.deOptimize();
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-    list.insert(0, 5);
+    list.insertAfter(0, 5, nullptr);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
 
     int tmp = 0;
-    list.get(0, &tmp);
+    list.getLogic(0, &tmp);
 
 
-    list.insert(0, 5);
+    list.insertAfter(0, 5, nullptr);
     EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
 
     tmp = 0;
-    list.get(0, &tmp);
+    list.getLogic(0, &tmp);
     EXPECT_EQ(tmp, 5);
 
     tmp = 0;
-    list.get(1, &tmp);
+    list.getLogic(1, &tmp);
     EXPECT_EQ(tmp, 5);
 }
 
@@ -337,7 +284,7 @@ TEST(SwiftyListTests, randomRemove) {
             EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
         }
         for (size_t i = 0; i < testSize; i++) {
-            list.remove(rand() % list.getSize());
+            list.removeLogic(rand() % list.getSize());
             EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
         }
         EXPECT_TRUE(list.isEmpty());
@@ -356,48 +303,6 @@ TEST(SwiftyListTests, capacity) {
             EXPECT_GE(list.getCapacity(), i + 1);
             EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
         }
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-    }
-}
-
-TEST(SwiftyListTests, resize0) {
-    for (size_t testSize = 0; testSize < CAPACITY_RANGE; testSize++) {
-        SwiftyList<int> list(0, 0, NULL, 0);
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-        for (size_t i = 0; i < testSize; i++) {
-            if (i % 2 == 0)
-                list.pushBack(i);
-            else
-                list.pushFront(i);
-            list.resize(0);
-            EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-            EXPECT_GE(list.getCapacity(), i + 1);
-        }
-
-        list.resize(0);
-        EXPECT_GE(list.getCapacity(), list.getSize());
-
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-    }
-}
-
-TEST(SwiftyListTests, resizeALot) {
-    for (size_t testSize = 0; testSize < CAPACITY_RANGE; testSize++) {
-        SwiftyList<int> list(0, 0, NULL, 0);
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-        for (size_t i = 0; i < testSize; i++) {
-            if (i % 2 == 0)
-                list.pushBack(i);
-            else
-                list.pushFront(i);
-            list.resize(list.getSize() * 2);
-            EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-            EXPECT_GE(list.getCapacity(), i + 1);
-        }
-
-        list.resize(list.getSize() * 2);
-        EXPECT_GE(list.getCapacity(), list.getSize());
-
         EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
     }
 }
@@ -421,25 +326,6 @@ TEST(SwiftyListTests, clearBig) {
     }
 }
 
-TEST(SwiftyListTests, shrinkToFit) {
-    for (size_t testSize = 0; testSize < CAPACITY_RANGE; testSize++) {
-        SwiftyList<int> list(0, 0, NULL, 0);
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-        for (size_t i = 0; i < testSize; i++) {
-            if (i % 2 == 0)
-                list.pushBack(i);
-            else
-                list.pushFront(i);
-            list.shrinkToFit();
-            EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-        }
-
-        list.shrinkToFit();
-        EXPECT_GE(list.getCapacity(), list.getSize());
-        EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
-    }
-}
-
 TEST(SwiftyListTests, deoptimize) {
     for (size_t testSize = 0; testSize < CAPACITY_RANGE; testSize++) {
         SwiftyList<int> list(0, 0, NULL, 0);
@@ -457,7 +343,7 @@ TEST(SwiftyListTests, deoptimize) {
     }
 }
 
-TEST(SwiftyListTests, swap) {
+TEST(SwiftyListTests, swapLogic) {
     for (size_t testSize = 0; testSize < CAPACITY_RANGE; testSize++) {
         SwiftyList<int> list(0, 0, NULL, 0);
         EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
@@ -475,13 +361,13 @@ TEST(SwiftyListTests, swap) {
             const int firstPos = rand() % list.getSize();
             const int secondPos = rand() % list.getSize();
 
-            list.get(firstPos, &firstElemInit);
-            list.get(secondPos, &secondElemInit);
+            list.getLogic(firstPos, &firstElemInit);
+            list.getLogic(secondPos, &secondElemInit);
 
-            list.swap(firstPos, secondPos);
+            list.swapLogic(firstPos, secondPos);
 
-            list.get(firstPos, &firstElem);
-            list.get(secondPos, &secondElem);
+            list.getLogic(firstPos, &firstElem);
+            list.getLogic(secondPos, &secondElem);
 
             EXPECT_EQ(firstElem, secondElemInit);
             EXPECT_EQ(firstElemInit, secondElem);
@@ -499,13 +385,13 @@ TEST(SwiftyListTests, swap) {
             const int firstPos = rand() % list.getSize();
             const int secondPos = rand() % list.getSize();
 
-            list.get(firstPos, &firstElemInit);
-            list.get(secondPos, &secondElemInit);
+            list.getLogic(firstPos, &firstElemInit);
+            list.getLogic(secondPos, &secondElemInit);
 
-            list.swap(firstPos, secondPos);
+            list.swapLogic(firstPos, secondPos);
 
-            list.get(firstPos, &firstElem);
-            list.get(secondPos, &secondElem);
+            list.getLogic(firstPos, &firstElem);
+            list.getLogic(secondPos, &secondElem);
 
             EXPECT_EQ(firstElem, secondElemInit);
             EXPECT_EQ(firstElemInit, secondElem);

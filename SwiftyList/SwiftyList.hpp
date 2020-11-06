@@ -29,7 +29,8 @@ enum ListOpResult {
     LIST_OP_CORRUPTED,
     LIST_OP_OVERFLOW,
     LIST_OP_UNDERFLOW,
-    LIST_OP_NOTFOUND
+    LIST_OP_NOTFOUND,
+    LIST_OP_SEGFAULT
 };
 
 template<typename ListElem>
@@ -37,6 +38,7 @@ struct SwiftyListNode {
     ListElem value;
     size_t next;
     size_t previous;
+    bool   valid;
 };
 
 struct SwiftyListParams {
@@ -77,11 +79,28 @@ private:
     size_t size;
     struct SwiftyListParams *params;
 
-    size_t inline getFreePos() {
-        return (this->reallocate(true) != LIST_OP_OK) ? 0 : this->size + 1;
+    size_t freePtr;
+    size_t freeSize;
+
+    size_t inline getFreePos(bool mutating=false) {
+        if (freeSize != 0) {
+            size_t newPos = this->freePtr;
+            if (mutating) {
+                this->freeSize--;
+                this->freePtr = this->storage[newPos].next;
+            }
+            this->storage[this->freePtr].valid = false;
+            return newPos;
+        }
+        if (this->reallocate(true) != LIST_OP_OK)
+            return 0;
+        this->storage[ this->size + 1].valid = true;
+        return  this->size + 1;
     }
 
     ListOpResult reallocate(bool onlyUp) {
+        if (this->freeSize != 0)
+            return LIST_OP_OK;
         if ((this->size < this->capacity) && onlyUp) return LIST_OP_OK;
         size_t newCapacity = this->capacity;
         if (this->size >= this->capacity)
@@ -113,7 +132,7 @@ private:
         SwiftyList<ListElem> *list;
 
         void dumpNodes() {
-            for (size_t i = 0; i <= this->list->getSize(); i++) {
+            for (size_t i = 0; i <= this->list->sumSize(); i++) {
                 this->dumpNode(i);
             }
         }
@@ -124,7 +143,11 @@ private:
             if (node == 0) {
                 fprintf(this->file, "<td colspan=\"3\" bgcolor=\"lightyellow\" port=\"f0h\" border=\"1\">h+t</td>");
             } else {
-                fprintf(this->file, "<td colspan=\"3\" bgcolor=\"pink\" port=\"f0h\" border=\"1\">%zu</td>", node);
+                if ( this->list->storage[node].valid){
+                    fprintf(this->file, "<td colspan=\"3\" bgcolor=\"pink\" port=\"f0h\" border=\"1\">%zu</td>", node);
+                } else {
+                    fprintf(this->file, "<td colspan=\"3\" bgcolor=\"green\" port=\"f0h\" border=\"1\">%zu</td>", node);
+                }
             }
             int tmp = 0;
             this->list->get(node, &tmp);
@@ -212,7 +235,242 @@ private:
         return tmp_s;
     }
 
+    bool inline addressValid(size_t pos) const{
+        return this->storage[pos].valid;
+    }
+
+    void addFreePos(size_t pos) {
+        this->storage[pos].valid = false;
+        if (this->freeSize == 0) {
+            this->freeSize = 1;
+            this->freePtr = pos;
+        } else {
+            this->freeSize++;
+            this->storage[pos].next = this->freePtr;
+            this->freePtr = pos;
+        }
+    }
 public:
+    SwiftyList(size_t initialSize, short int verbose, FILE *logFile, bool useChecks) :
+            optimized(true),
+            capacity(initialSize),
+            size(0),
+            useChecks(useChecks),
+            freeSize(0),
+            freePtr(0) {
+        this->storage = (SwiftyListNode<ListElem> *) calloc(initialSize + 1, sizeof(SwiftyListNode<ListElem>));
+        this->params = new SwiftyListParams(verbose, useChecks, logFile);
+        this->dumper = new SwiftyList::ListGraphDumper(this, "tmp.gv");
+        this->storage[0].next = 0;
+        this->storage[0].previous = 0;
+        this->storage[0].valid = false;
+    }
+
+    ListOpResult insertAfter(size_t pos, ListElem value, size_t* physPos=nullptr) {
+        if (pos > this->sumSize())
+            return LIST_OP_OVERFLOW;
+        if (!this->addressValid(pos) && pos != 0)
+            return LIST_OP_SEGFAULT;
+
+        if (pos != this->storage[0].previous)
+            this->optimized = false;
+
+        size_t newPos = this->getFreePos(true);
+        if (newPos == 0)
+            return LIST_OP_NOMEM;
+
+        if (physPos != nullptr)
+            *physPos = newPos;
+
+        this->storage[newPos].value = value;
+        this->storage[newPos].previous = pos;
+        this->storage[newPos].next = this->storage[pos].next;
+
+        this->storage[this->storage[pos].next].previous = newPos;
+        this->storage[pos].next = newPos;
+
+        this->size++;
+
+        return LIST_OP_OK;
+    }
+
+    ListOpResult insertAfterLogic(size_t pos, ListElem value, size_t* physPos=nullptr) {
+        if (pos > this->size)
+            return LIST_OP_OVERFLOW;
+        return this->insertAfter(this->logicToPhysic(pos), value, physPos);
+    }
+
+    ListOpResult insertBefore(size_t pos, ListElem value, size_t* physPos=nullptr) {
+        if (pos > this->sumSize())
+            return LIST_OP_OVERFLOW;
+        if (!this->addressValid(pos) && pos != 0)
+            return LIST_OP_SEGFAULT;
+
+        pos = this->storage[pos].previous;
+        return this->insertAfter(pos, value, physPos);
+    }
+
+    ListOpResult insertBeforeLogic(size_t pos, ListElem value, size_t* physPos=nullptr) {
+        if (pos > this->size)
+            return LIST_OP_OVERFLOW;
+        return this->insertBefore(this->logicToPhysic(pos), value, physPos);
+    }
+
+    ListOpResult pushFront(const ListElem value, size_t* physPos=nullptr) {
+        return this->insertAfter(0, value, physPos);
+    }
+
+    ListOpResult pushBack(const ListElem value, size_t* physPos=nullptr) {
+        return this->insertAfter(this->storage[0].previous, value, physPos);
+    }
+
+    ListOpResult set(size_t pos, const ListElem value) {
+        PERFORM_CHECKS;
+        if (!this->addressValid(pos))
+            return LIST_OP_SEGFAULT;
+        this->storage[pos].value = value;
+        return LIST_OP_OK;
+    }
+
+    ListOpResult setLogic(size_t pos, const ListElem value) {
+        if (pos > this->size)
+            return LIST_OP_OVERFLOW;
+        return this->set(this->logicToPhysic(pos), value);
+    }
+
+    ListOpResult get(size_t pos, ListElem* value) {
+        PERFORM_CHECKS;
+        if (!this->addressValid(pos))
+            return LIST_OP_SEGFAULT;
+        *value = this->storage[pos].value;
+        return LIST_OP_OK;
+    }
+
+    ListOpResult getLogic(size_t pos, ListElem* value=nullptr) {
+        if (pos > this->size)
+            return LIST_OP_OVERFLOW;
+        return this->get(this->logicToPhysic(pos), value);
+    }
+
+    ListOpResult pop(size_t pos, ListElem *value=nullptr) {
+        PERFORM_CHECKS;
+        if (this->size == 0)
+            return LIST_OP_UNDERFLOW;
+        if (!this->addressValid(pos))
+            return LIST_OP_SEGFAULT;
+
+        if (pos != this->storage[0].previous)
+            this->optimized = false;
+
+        if (value != nullptr)
+            *value = this->storage[pos].value;
+
+        this->storage[this->storage[pos].next].previous = this->storage[pos].previous;
+        this->storage[this->storage[pos].previous].next = this->storage[pos].next;
+
+        this->addFreePos(pos);
+        this->size--;
+
+        return LIST_OP_OK;
+    }
+
+    ListOpResult popFront(ListElem *value) {
+        return this->pop(this->storage[0].next, value);
+    }
+
+    ListOpResult popBack(ListElem *value) {
+        return this->pop(this->storage[0].previous, value);
+    }
+
+    ListOpResult popLogic(size_t pos, ListElem *value) {
+        return this->pop(this->logicToPhysic(pos), value);
+    }
+
+    ListOpResult remove(size_t pos) {
+        return this->pop(pos, nullptr);
+    }
+
+    ListOpResult removeLogic(size_t pos) {
+        if (pos > this->size)
+            return LIST_OP_OVERFLOW;
+        return this->pop(this->logicToPhysic(pos), nullptr);
+    }
+
+    ListOpResult swap(size_t firstPos, size_t secondPos) {
+        if (firstPos == secondPos)
+            return LIST_OP_OK;
+        if (!this->addressValid(firstPos) || !this->addressValid(secondPos))
+            return LIST_OP_SEGFAULT;
+
+        ListElem tmp = this->storage[firstPos].value;
+        this->storage[firstPos].value = this->storage[secondPos].value;
+        this->storage[secondPos].value = tmp;
+        return LIST_OP_OK;
+    }
+
+    ListOpResult swapLogic(size_t firstPos, size_t secondPos) {
+        if (firstPos > this->size || secondPos > this->size)
+            return LIST_OP_OVERFLOW;
+        return this->swap(this->logicToPhysic(firstPos), this->logicToPhysic(secondPos));
+    }
+
+    ListOpResult clear() {
+        PERFORM_CHECKS;
+        this->size = 0;
+        this->storage[0].next = 0;
+        this->storage[0].previous = 0;
+        this->freeSize = 0;
+        this->freePtr  = 0;
+        this->reallocate(false);
+        return LIST_OP_OK;
+    }
+
+    ListOpResult optimize() {
+        PERFORM_CHECKS;
+    }
+
+    ListOpResult checkUp() {
+        if (this->size == 0)
+            return LIST_OP_OK;
+
+        size_t pos = 0;
+        for (size_t i = 0; i <= this->size; i++) {
+            SwiftyListNode<ListElem> node = this->storage[pos];
+            if ((node.next == pos || node.previous == pos) && this->size > 1)
+                return LIST_OP_CORRUPTED;
+            pos = node.next;
+        }
+
+        if (pos != 0)
+            return LIST_OP_CORRUPTED;
+
+        return LIST_OP_OK;
+    }
+
+    ListOpResult deOptimize(){
+        this->optimized = false;
+        return LIST_OP_OK;
+    }
+
+    ListOpResult search(size_t *pos, const ListElem value) {
+        PERFORM_CHECKS;
+        if (this->size == 0) {
+            return LIST_OP_NOTFOUND;
+        }
+        *pos = this->storage[0].next;
+        while (true) {
+            if (this->storage[*pos].value == value) {
+                (*pos)--;
+                return LIST_OP_OK;
+            }
+
+            if (*pos == this->storage[0].previous)
+                break;
+            *pos = this->storage[*pos].next;
+        }
+        return LIST_OP_NOTFOUND;
+    }
+
     void dumpAll(const char* sectionName){
         this->setNewSection(sectionName);
         this->dumpData();
@@ -248,288 +506,9 @@ public:
         free(name);
     }
 
-    SwiftyList(size_t initialSize, short int verbose, FILE *logFile, bool useChecks) :
-            optimized(true),
-            capacity(initialSize),
-            size(0),
-            useChecks(useChecks) {
-        this->storage = (SwiftyListNode<ListElem> *) calloc(initialSize + 1, sizeof(SwiftyListNode<ListElem>));
-        this->params = new SwiftyListParams(verbose, useChecks, logFile);
-        this->dumper = new SwiftyList::ListGraphDumper(this, "tmp.gv");
-    }
-
-    void buildGraph(char *imgName) {
-
-    }
-
-    ~SwiftyList() {
-        free(this->storage);
-    }
-
-    void swapPhysicOnly(size_t firstPos, size_t secondPos) {
-        if (secondPos > this->size || firstPos > this->size)
-            return;
-        if (secondPos == firstPos)
-            return;
-        firstPos++;
-        secondPos++;
-        this->optimized = false;
-
-        if (this->storage[firstPos].previous == secondPos) {
-            size_t tmpPos = firstPos;
-            firstPos = secondPos;
-            secondPos = tmpPos;
-        }
-
-        const SwiftyListNode<ListElem> tmpFirst = this->storage[firstPos];
-        this->storage[firstPos] = this->storage[secondPos];
-        this->storage[secondPos] = tmpFirst;
-
-        this->storage[tmpFirst.previous].next = secondPos;
-        this->storage[this->storage[firstPos].next].previous = firstPos;
-
-        if (this->storage[firstPos].previous == firstPos || this->storage[firstPos].next == firstPos) {
-            this->storage[secondPos].next = firstPos;
-            this->storage[firstPos].previous = secondPos;
-        } else {
-            this->storage[tmpFirst.next].previous = secondPos;
-            this->storage[this->storage[firstPos].previous].next = firstPos;
-        }
-    }
-
-    SwiftyListParams *getParams() {
-        return this->params;
-    }
-
-    ListOpResult set(size_t pos, const ListElem value) {
-        PERFORM_CHECKS;
-        if (pos >= this->size)
-            return LIST_OP_UNDERFLOW;
-        size_t physPos = this->logicToPhysic(pos);
-        this->storage[physPos].value = value;
-        return LIST_OP_OK;
-    }
-
-    ListOpResult get(size_t pos, ListElem *value) {
-        PERFORM_CHECKS;
-        if (pos >= this->size)
-            return LIST_OP_UNDERFLOW;
-        size_t physPos = this->logicToPhysic(pos);
-        *value = this->storage[physPos].value;
-        return LIST_OP_OK;
-    }
-
-    ListOpResult insert(size_t pos, ListElem value) {
-        if (pos > this->size)
-            return LIST_OP_OVERFLOW;
-        if (pos != this->size)
-            this->optimized = false;
-        size_t posNext = (pos + 1) % (this->size + 1);
-        if (!this->optimized) {
-            size_t iterator = 0;
-            for (size_t i = 0; i < posNext; i++) {
-                iterator = this->storage[iterator].next;
-            }
-            posNext = iterator;
-        }
-        size_t posNew = this->getFreePos();
-        if (posNew == 0)
-            return LIST_OP_NOMEM;
-        this->storage[posNew].next = posNext;
-        this->storage[posNew].previous = this->storage[posNext].previous;
-        this->storage[posNew].value = value;
-
-        this->storage[this->storage[posNext].previous].next = posNew;
-        this->storage[posNext].previous = posNew;
-
-        this->size++;
-        return LIST_OP_OK;
-    }
-
-    ListOpResult pop(size_t pos, ListElem *value) {
-        PERFORM_CHECKS;
-        if (pos >= this->size)
-            return LIST_OP_UNDERFLOW;
-        if (!this->optimized) {
-            size_t iterator = 0;
-            for (size_t i = 0; i <= pos; i++) {
-                iterator = this->storage[iterator].next;
-            }
-            pos = iterator;
-        } else {
-            pos++;
-        }
-        if (pos != this->size - 1)
-            this->optimized = false;
-
-        if (value != nullptr) {
-            *value = this->storage[pos].value;
-        }
-
-        this->swapPhysicOnly(pos - 1, this->size - 1);
-        pos = this->size;
-
-        this->storage[this->storage[pos].previous].next = this->storage[pos].next;
-        this->storage[this->storage[pos].next].previous = this->storage[pos].previous;
-
-        this->size--;
-        this->reallocate(false);
-        return LIST_OP_OK;
-    }
-
-    ListOpResult pushFront(const ListElem value) {
-        return this->insert(0, value);
-    }
-
-    ListOpResult pushBack(const ListElem value) {
-        return this->insert(this->size, value);
-    }
-
-    ListOpResult popFront(ListElem *value) {
-        return this->pop(0, value);
-    }
-
-    ListOpResult popBack(ListElem *value) {
-        return this->pop(this->size - 1, value);
-    }
-
-    ListOpResult search(size_t *pos, const ListElem value) {
-        PERFORM_CHECKS;
-        if (this->size == 0) {
-            return LIST_OP_NOTFOUND;
-        }
-        *pos = this->storage[0].next;
-        while (true) {
-            if (this->storage[*pos].value == value) {
-                (*pos)--;
-                return LIST_OP_OK;
-            }
-
-            if (*pos == this->storage[0].previous)
-                break;
-            *pos = this->storage[*pos].next;
-        }
-        return LIST_OP_NOTFOUND;
-    }
-
-    ListOpResult remove(size_t pos) {
-        return this->pop(pos, nullptr);
-    }
-
-    ListOpResult resize(size_t nElements) {
-        PERFORM_CHECKS;
-        size_t sumSizes = this->size;
-        if (nElements < sumSizes) {
-            nElements = sumSizes;
-        }
-
-        nElements++;
-        SwiftyListNode<ListElem> *newStorage = (SwiftyListNode<ListElem> *) realloc(this->storage, nElements *
-                                                                                                   sizeof(SwiftyListNode<ListElem>));
-
-        if (newStorage == nullptr) return LIST_OP_NOMEM;
-
-        this->storage = newStorage;
-        this->capacity = nElements - 1;
-        return LIST_OP_OK;
-    }
-
-    ListOpResult swap(size_t firstPos, size_t secondPos) {
-        if (firstPos >= this->size || secondPos >= this->size)
-            return LIST_OP_OVERFLOW;
-        size_t first = firstPos;
-        size_t second = secondPos;
-        if (!this->optimized) {
-            size_t iterator = 0;
-            for (size_t i = 0; i <= firstPos; i++) {
-                iterator = this->storage[iterator].next;
-            }
-            first = iterator;
-        } else {
-            first++;
-        }
-
-        if (!this->optimized) {
-            size_t iterator = 0;
-            for (size_t i = 0; i <= secondPos; i++) {
-                iterator = this->storage[iterator].next;
-            }
-            second = iterator;
-        } else {
-            second++;
-        }
-
-        ListElem tmp = this->storage[first].value;
-        this->storage[first].value = this->storage[second].value;
-        this->storage[second].value = tmp;
-        return LIST_OP_OK;
-    }
-
-    ListOpResult clear() {
-        PERFORM_CHECKS;
-        this->size = 0;
-        this->storage[0].next = 0;
-        this->storage[0].previous = 0;
-        this->reallocate(false);
-        return LIST_OP_OK;
-    }
-
-    ListOpResult optimize() {
-        PERFORM_CHECKS;
-        for (size_t i = 0; i < this->size; i++) {
-            size_t nextPos = this->storage[i].next - 1;
-            if (i < nextPos)
-                this->swapPhysicOnly(i, nextPos);
-        }
-        this->optimized = true;
-        return LIST_OP_OK;
-    }
-
-    ListOpResult deOptimize() {
-        PERFORM_CHECKS;
-        for (size_t i = 0; i < this->size; i++) {
-            int rPos = rand();
-            int lPos = rand();
-            this->swapPhysicOnly(rPos % this->size, lPos % this->size);
-        }
-        return LIST_OP_OK;
-    }
-
-    ListOpResult checkUp() {
-        if (this->size == 0)
-            return LIST_OP_OK;
-
-        size_t pos = 0;
-        for (size_t i = 0; i <= this->size; i++) {
-            SwiftyListNode<ListElem> node = this->storage[pos];
-            if ((node.next == pos || node.previous == pos) && this->size > 1)
-                return LIST_OP_CORRUPTED;
-            pos = node.next;
-        }
-
-        if (pos != 0)
-            return LIST_OP_CORRUPTED;
-
-        return LIST_OP_OK;
-    }
-
-    ListOpResult print() {
-        PERFORM_CHECKS;
-        size_t pos = this->storage[0].next;
-        if (pos == 0 || this->size == 0)
-            return LIST_OP_OK;
-        while (true) {
-            printf("%d ", this->storage[pos].value);
-            if (pos == this->storage[0].previous)
-                break;
-            pos = this->storage[pos].next;
-        }
-        return LIST_OP_OK;
-    }
-
-    ListOpResult shrinkToFit() {
-        return this->resize(0);
-    }
+//    ListOpResult shrinkToFit() {
+//        return this->resize(0);
+//    }
 
     size_t getSize() const {
         return this->size;
@@ -545,6 +524,18 @@ public:
 
     bool isEmpty() {
         return this->size == 0;
+    }
+
+    ~SwiftyList() {
+        free(this->storage);
+    }
+
+    SwiftyListParams *getParams() {
+        return this->params;
+    }
+
+    size_t sumSize() const{
+        return this->size + this->freeSize;
     }
 };
 
