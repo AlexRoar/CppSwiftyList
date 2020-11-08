@@ -659,6 +659,8 @@ public:
     ListOpResult checkUp() const {
         if (this->size == 0)
             return LIST_OP_OK;
+        if (this->size > this->capacity)
+            return LIST_OP_CORRUPTED;
 
         size_t pos = 0;
         for (size_t i = 0; i <= this->size; i++) {
@@ -757,8 +759,11 @@ public:
         if (logFile == NULL) return;
 
         fprintf(logFile, "SwiftyList [%p] {\n", this);
+        fprintf(logFile, "\tstorage  :  %p\n",  this->storage);
         fprintf(logFile, "\tcapacity :  %zu\n", this->capacity);
         fprintf(logFile, "\tsize     :  %zu\n", this->size);
+        fprintf(logFile, "\tfreeSize :  %zu\n", this->freeSize);
+        fprintf(logFile, "\tsumSize  :  %zu\n", this->sumSize());
         fprintf(logFile, "\thead     :  %zu\n", this->storage[0].next);
         fprintf(logFile, "\ttail     :  %zu\n", this->storage[0].previous);
         fprintf(logFile, "\toptimized:  %d\n", this->optimized);

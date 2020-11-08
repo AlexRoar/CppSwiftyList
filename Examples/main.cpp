@@ -8,7 +8,7 @@ double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;\
 printf("ELAPSED: %lf sec\n", elapsed_secs);}
 
 int main() {
-    SwiftyList<int> list(20, 2, fopen("graphLog.html", "w"), false);
+    SwiftyList<int> list(20, 1, fopen("graphLog.html", "w"), false);
 
     for (size_t i = 0; i < 10; i++) {
         if (i % 2 == 1)
