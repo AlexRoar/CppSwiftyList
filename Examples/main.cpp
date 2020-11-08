@@ -44,6 +44,15 @@ int main() {
     list.pushBack(104);
 
     list.dumpAll("Even more");
+
+    list.clear();
+
+    list.dumpAll("Cleared");
+
+    list.pushBack(103);
+    list.pushBack(104);
+
+    list.dumpAll("Pushed again");
     
     list.destructList();
 

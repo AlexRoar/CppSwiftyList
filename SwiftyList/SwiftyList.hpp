@@ -1,9 +1,13 @@
-//
-//  SwiftyList.hpp
-//  SwiftyList
-//
-//  Created by Александр Дремов on 30.10.2020.
-//
+/**
+ * SwiftyList - optimized list with physical and logical interfaces
+ *
+ * Verbose levels:
+ * 0 - No dump at all
+ * 1 - Dump only when requested or fail occurs
+ * 2 - Dump almost all operations
+ *
+ * Created by Александр Дремов on 30.10.2020.
+ */
 
 #ifndef SwiftyList_hpp
 #define SwiftyList_hpp
@@ -13,7 +17,6 @@
 #include <cstring>
 
 #define DOTPATH "/usr/local/bin/dot"
-
 #define PERFORM_CHECKS(where) {                             \
 if (this->useChecks || this->params->getVerbose() != 0){    \
     ListOpResult resCheck = this->checkUp();                \
@@ -23,14 +26,6 @@ if (this->useChecks || this->params->getVerbose() != 0){    \
 }
 
 #define DUMP_STATUS_REASON(status, reason) this->opDumper(status, reason)
-
-/**
- * Verbose levels:
- * 0 - No dump at all
- * 1 - Dump only when requested or fail occurs
- * 2 - Dump almost all operations
- */
-
 const size_t INITIAL_INCREASE = 16;
 
 enum ListOpResult {
@@ -186,7 +181,7 @@ private:
     };
 
     /**
-     * Retrieves next possible freep pos at all costs.
+     * Retrieves next possible free pos at all costs.
      * Reallocates container if needed.
      */
     size_t getFreePos(bool mutating = false) {
