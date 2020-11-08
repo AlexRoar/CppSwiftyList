@@ -19,7 +19,7 @@ if (this->useChecks || this->params->getVerbose() != 0){    \
     ListOpResult resCheck = this->checkUp();                \
     this->opDumper(resCheck, where);                        \
     if (resCheck != LIST_OP_OK)return resCheck;             \
-    }             \
+    }                                                       \
 }
 
 #define DUMP_STATUS_REASON(status, reason) this->opDumper(status, reason)
@@ -69,12 +69,18 @@ private:
         char *filePath;
         SwiftyList<ListElem> *list;
 
+        /**
+         * Calls dumpNode() for every node in the list
+         */
         void dumpNodes() {
             for (size_t i = 0; i <= this->list->sumSize(); i++) {
                 this->dumpNode(i);
             }
         }
 
+        /**
+         * Dump node in graphviz format
+         */
         void dumpNode(size_t node) {
             fprintf(this->file, "node%zu [label=", node);
             fprintf(this->file, "<<table border=\"0\" cellspacing=\"0\"><tr>");
@@ -101,6 +107,9 @@ private:
             fprintf(this->file, "];\n");
         }
 
+        /**
+         * Define links between nodes
+         */
         void drawGraphs() {
             for (size_t i = 0; i <= this->list->sumSize(); i++) {
                 if (i == 0) {
@@ -124,6 +133,9 @@ private:
     public:
         ListGraphDumper(SwiftyList<ListElem> *list, char *filePath) : filePath(filePath), list(list), file(nullptr) {}
 
+        /**
+         * Generate graph image
+         */
         void build(char *imgPath) {
             this->file = fopen(this->filePath, "wb");
             if (this->file == nullptr){
@@ -142,6 +154,8 @@ private:
             fclose(this->file);
             free(compiledCommand);
         }
+        
+        ~ListGraphDumper(){}
     };
 
     struct SwiftyListNode {
@@ -171,6 +185,10 @@ private:
         }
     };
 
+    /**
+     * Retrieves next possible freep pos at all costs.
+     * Reallocates container if needed.
+     */
     size_t getFreePos(bool mutating = false) {
         if (freeSize != 0) {
             size_t newPos = this->freePtr;
@@ -189,6 +207,10 @@ private:
         return  this->size + 1;
     }
 
+    /**
+     * Reallocates container so that it can hold one more value
+     * Reallocation is not performed if some freeSize cells are available.
+     */
     ListOpResult reallocate() {
         if (this->freeSize != 0)
             return LIST_OP_OK;
@@ -210,6 +232,9 @@ private:
         return LIST_OP_OK;
     }
 
+    /**
+     * Convert logic position to the physic one
+     */
     size_t logicToPhysic(size_t pos) const {
         if (this->optimized) {
             return pos + 1;
@@ -222,9 +247,12 @@ private:
         }
     }
 
-    char *genRandomStringName(int len) const {
+    /**
+     * Generates random image name
+     */
+    char* genRandomImageName(int len) const {
         len += sizeof(".svg");
-        char *tmp_s = (char *) calloc((len + 2), sizeof(char));
+        char *tmp_s = (char *) calloc((len + 10), sizeof(char));
         static const char alphanum[] =
                 "0123456789"
                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -237,6 +265,9 @@ private:
         return tmp_s;
     }
 
+    /**
+     * Add released cell to the free poses list
+     */
     void addFreePos(size_t pos) {
         this->storage[pos].valid = false;
         this->storage[pos].previous = pos;
@@ -251,13 +282,15 @@ private:
         }
     }
 
+    /**
+     * Dumps information about list if needed
+     */
     void opDumper(ListOpResult status, const char* where) const {
         if (this->params->getVerbose() == 0)
             return;
         if (this->params->getVerbose() == 1 && status == LIST_OP_OK)
             return;
         char* dumpInfo = (char*)calloc(sizeof("Logging : ") + strlen(where) + 10, sizeof(char));
-
         sprintf(dumpInfo, "%10s: Logging : \"%s\"",(status == LIST_OP_OK)? "[OK]": "[CAUTION]" , where);
 
         this->dumpAll((const char*)dumpInfo);
@@ -275,12 +308,19 @@ public:
             freePtr(0) {
         this->storage = (SwiftyListNode *) calloc(initialSize + 1, sizeof(SwiftyListNode));
         this->params = new SwiftyListParams(verbose, useChecks, logFile);
-        this->dumper = new SwiftyList::ListGraphDumper(this, "tmp.gv");
+        this->dumper = new SwiftyList::ListGraphDumper(this, (char*)"tmp.gv");
         this->storage[0].next = 0;
         this->storage[0].previous = 0;
         this->storage[0].valid = false;
     }
 
+    /**
+     * Insert an element after pos
+     * @param pos - physical pos of considered element
+     * @param value - value to be inserted
+     * @param physPos - physical position of inserted element
+     * @return operation result
+     */
     ListOpResult insertAfter(size_t pos, ListElem value, size_t* physPos=nullptr) {
         PERFORM_CHECKS("Insert after setting up");
         if (pos > this->sumSize()) {
@@ -314,6 +354,13 @@ public:
         return LIST_OP_OK;
     }
 
+    /**
+     * Insert an element after pos
+     * @param pos - logical pos of considered element
+     * @param value - value to be inserted
+     * @param physPos - physical position of inserted element
+     * @return operation result
+     */
     ListOpResult insertAfterLogic(size_t pos, ListElem value, size_t* physPos=nullptr) {
         if (pos > this->size) {
             DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "insertAfterLogic pos overflow");
@@ -322,6 +369,13 @@ public:
         return this->insertAfter(this->logicToPhysic(pos), value, physPos);
     }
 
+    /**
+     * Insert an element before pos
+     * @param pos - physical pos of considered element
+     * @param value - value to be inserted
+     * @param physPos - physical position of inserted element
+     * @return operation result
+     */
     ListOpResult insertBefore(size_t pos, ListElem value, size_t* physPos=nullptr) {
         if (pos > this->sumSize()) {
             DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "insertBefore pos overflow");
@@ -336,6 +390,13 @@ public:
         return this->insertAfter(pos, value, physPos);
     }
 
+    /**
+     * Insert an element before pos
+     * @param pos - logical pos of considered element
+     * @param value - value to be inserted
+     * @param physPos - physical position of inserted element
+     * @return operation result
+     */
     ListOpResult insertBeforeLogic(size_t pos, ListElem value, size_t* physPos=nullptr) {
         if (pos > this->size) {
             DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "insertBeforeLogic pos overflow");
@@ -344,14 +405,32 @@ public:
         return this->insertBefore(this->logicToPhysic(pos), value, physPos);
     }
 
+    /**
+     * Insert an element at the first position
+     * @param value - value to be inserted
+     * @param physPos - physical position of inserted element
+     * @return operation result
+     */
     ListOpResult pushFront(const ListElem value, size_t* physPos=nullptr) {
         return this->insertAfter(0, value, physPos);
     }
 
+    /**
+     * Insert an element at the last position
+     * @param value - value to be inserted
+     * @param physPos - physical position of inserted element
+     * @return operation result
+     */
     ListOpResult pushBack(const ListElem value, size_t* physPos=nullptr) {
         return this->insertAfter(this->storage[0].previous, value, physPos);
     }
 
+    /**
+     * Set an element at the physical position pos to the new value
+     * @param pos - physical pos of considered element
+     * @param value - new value
+     * @return operation result
+     */
     ListOpResult set(size_t pos, const ListElem value) {
         PERFORM_CHECKS("Set setting up");
         if (!this->addressValid(pos)) {
@@ -362,6 +441,12 @@ public:
         return LIST_OP_OK;
     }
 
+    /**
+     * Set an element at the logical position pos to the new value
+     * @param pos - logical pos of considered element
+     * @param value - new value
+     * @return operation result
+     */
     ListOpResult setLogic(size_t pos, const ListElem value) {
         if (pos > this->size) {
             DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "setLogic pos overflow");
@@ -370,6 +455,12 @@ public:
         return this->set(this->logicToPhysic(pos), value);
     }
 
+    /**
+     * Get an element at the physical position pos
+     * @param pos - physical pos of considered element
+     * @param value - retrieved value
+     * @return operation result
+     */
     ListOpResult get(size_t pos, ListElem* value) {
         if (!this->addressValid(pos)) {
             DUMP_STATUS_REASON(LIST_OP_SEGFAULT, "get segmentation fault");
@@ -383,6 +474,12 @@ public:
         return LIST_OP_OK;
     }
 
+    /**
+     * Get an element at the logical position pos
+     * @param pos - logical pos of considered element
+     * @param value - retrieved value
+     * @return operation result
+     */
     ListOpResult getLogic(size_t pos, ListElem* value=nullptr) {
         if (pos > this->size) {
             DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "getLogic pos overflow");
@@ -391,6 +488,12 @@ public:
         return this->get(this->logicToPhysic(pos), value);
     }
 
+    /**
+     * Retrieve an element at the physical position pos and remove it
+     * @param pos - physical pos of considered element
+     * @param value - retrieved value
+     * @return operation result
+     */
     ListOpResult pop(size_t pos, ListElem *value=nullptr) {
         PERFORM_CHECKS("Pop setting up");
         if (this->size == 0) {
@@ -418,22 +521,48 @@ public:
         return LIST_OP_OK;
     }
 
+    /**
+     * Retrieve an element at the beginning and remove it
+     * @param value - retrieved value
+     * @return operation result
+     */
     ListOpResult popFront(ListElem *value) {
         return this->pop(this->storage[0].next, value);
     }
 
+    /**
+     * Retrieve an element at the end and remove it
+     * @param value - retrieved value
+     * @return operation result
+     */
     ListOpResult popBack(ListElem *value) {
         return this->pop(this->storage[0].previous, value);
     }
 
+    /**
+     * Retrieve an element at the logical position pos and remove it
+     * @param pos - logical pos of considered element
+     * @param value - retrieved value
+     * @return operation result
+     */
     ListOpResult popLogic(size_t pos, ListElem *value) {
         return this->pop(this->logicToPhysic(pos), value);
     }
 
+    /**
+     * Remove an element at the physical position pos
+     * @param pos - physical pos of considered element
+     * @return operation result
+     */
     ListOpResult remove(size_t pos) {
         return this->pop(pos, nullptr);
     }
 
+    /**
+     * Remove an element at the logical position pos
+     * @param pos - logical pos of considered element
+     * @return operation result
+     */
     ListOpResult removeLogic(size_t pos) {
         if (pos > this->size) {
             DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "pop pos underflow");
@@ -442,6 +571,12 @@ public:
         return this->pop(this->logicToPhysic(pos), nullptr);
     }
 
+    /**
+     * Swap two elements at the physical positions
+     * @param firstPos - physical pos of the first element
+     * @param secondPos - physical pos of the second element
+     * @return operation result
+     */
     ListOpResult swap(size_t firstPos, size_t secondPos) {
         PERFORM_CHECKS("Swap setting up");
         if (firstPos == secondPos)
@@ -458,6 +593,12 @@ public:
         return LIST_OP_OK;
     }
 
+    /**
+     * Swap two elements at the logical positions
+     * @param firstPos - logical pos of the first element
+     * @param secondPos - logical pos of the second element
+     * @return operation result
+     */
     ListOpResult swapLogic(size_t firstPos, size_t secondPos) {
         if (firstPos > this->size || secondPos > this->size) {
             DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "swapLogic pos underflow");
@@ -466,6 +607,10 @@ public:
         return this->swap(this->logicToPhysic(firstPos), this->logicToPhysic(secondPos));
     }
 
+    /**
+     * Clears the list
+     * @return operation result
+     */
     ListOpResult clear() {
         PERFORM_CHECKS("Clear setting up");
         this->size = 0;
@@ -478,6 +623,11 @@ public:
         return LIST_OP_OK;
     }
 
+    /**
+     * Optimizes the list so that logical access is effective and
+     * physical positions are aligned in ascending order in the storage
+     * @return operation result
+     */
     ListOpResult optimize() {
         PERFORM_CHECKS("Optimize setting up");
         SwiftyList<ListElem>::SwiftyListNode *newStorage = (SwiftyList<ListElem>::SwiftyListNode*)(calloc(this->size + 1, sizeof(SwiftyList<ListElem>::SwiftyListNode)));
@@ -505,6 +655,10 @@ public:
         return LIST_OP_OK;
     }
 
+    /**
+     * Check up list's integrity
+     * @return operation result
+     */
     ListOpResult checkUp() const {
         if (this->size == 0)
             return LIST_OP_OK;
@@ -523,12 +677,21 @@ public:
         return LIST_OP_OK;
     }
 
+    /**
+     * Deoptimizes list
+     * @return operation result
+     */
     ListOpResult deOptimize() {
         PERFORM_CHECKS("Deoptimize setting up");
         this->optimized = false;
         return LIST_OP_OK;
     }
 
+    /**
+     * Resizes list to desired number of elements. If elements number is lower than current one,
+     * shrinks to fit.
+     * @return operation result
+     */
     ListOpResult resize(size_t elemNumbers) {
         PERFORM_CHECKS("Resize setting up");
         if (elemNumbers < this->sumSize())
@@ -543,10 +706,20 @@ public:
         return LIST_OP_OK;
     }
 
+    /**
+     * Resizes list to the minimum available space
+     * @return operation result
+     */
     ListOpResult shrinkToFit() {
         return this->resize(0);
     }
 
+    /**
+     * Search an element in the list. Retrieves the logical position
+     * @param pos - logical pos of considered element
+     * @param value - searched value
+     * @return operation result
+     */
     ListOpResult search(size_t *pos, const ListElem value) const{
         PERFORM_CHECKS("Search setting up");
         if (this->size == 0) {
@@ -567,6 +740,9 @@ public:
         return LIST_OP_NOTFOUND;
     }
 
+    /**
+     * Dump all informaton as new section
+     */
     void dumpAll(const char* sectionName) const{
         if (this->params->getLogFile() != NULL) {
             this->setNewSection(sectionName);
@@ -575,6 +751,9 @@ public:
         }
     }
 
+    /**
+     * Dump only basic list information
+     */
     void dumpData() const{
         FILE* logFile = this->params->getLogFile();
         fprintf(logFile, "\n<pre><code>\n");
@@ -593,13 +772,19 @@ public:
         fprintf(logFile, "\n</code></pre>\n");
     }
 
+    /**
+     * Sets new logging section
+     */
     void setNewSection(const char *section) const{
         if (this->params->getLogFile() != NULL)
             fprintf(this->params->getLogFile(), "<h2>%s</h2>\n", section);
     }
 
+    /**
+     * Creates image and adds the reference to it into the log file
+     */
     void dumpImage() const{
-        char *name = this->genRandomStringName(20);
+        char *name = this->genRandomImageName(20);
         this->dumper->build(name);
         if (this->params->getLogFile() != NULL) fprintf(this->params->getLogFile(), "<img src=\"%s\">\n", name);
         free(name);
@@ -621,10 +806,6 @@ public:
         return this->size == 0;
     }
 
-    ~SwiftyList() {
-        free(this->storage);
-    }
-
     SwiftyListParams *getParams() const{
         return this->params;
     }
@@ -636,6 +817,12 @@ public:
     bool addressValid(size_t pos) const {
         return this->storage[pos].valid;
     }
+    
+    void destructList(){
+        free(this->storage);
+    }
+    
+    ~SwiftyList() {}
 };
 
 

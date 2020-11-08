@@ -44,6 +44,8 @@ int main() {
     list.pushBack(104);
 
     list.dumpAll("Even more");
+    
+    list.destructList();
 
     return 0;
 }
