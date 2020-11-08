@@ -203,7 +203,7 @@ private:
             DUMP_STATUS_REASON(LIST_OP_NOMEM, "not enough memory");
             return 0;
         }
-        this->storage[ this->size + 1].valid = true;
+        this->storage[this->size + 1].valid = true;
         return  this->size + 1;
     }
 
@@ -218,13 +218,13 @@ private:
         size_t newCapacity = this->capacity;
         if (this->size >= this->capacity)
             newCapacity = (this->capacity == 0) ? INITIAL_INCREASE : this->capacity * 2;
-
-        if (this->capacity == newCapacity)
+        
+        if (this->capacity == newCapacity + 2)
             return LIST_OP_OK;
 
-        SwiftyListNode *const newStorage = (SwiftyListNode *) realloc(this->storage,
-                                                                                          (newCapacity + 1) *
-                                                                                          sizeof(SwiftyListNode));
+        SwiftyList<ListElem>::SwiftyListNode *newStorage = (SwiftyList<ListElem>::SwiftyListNode *)
+                                            realloc(this->storage,(newCapacity + 2)
+                                                    * sizeof(SwiftyList<ListElem>::SwiftyListNode));
         if (newStorage == NULL)
             return LIST_OP_NOMEM;
         this->storage = newStorage;
@@ -290,7 +290,7 @@ private:
             return;
         if (this->params->getVerbose() == 1 && status == LIST_OP_OK)
             return;
-        char* dumpInfo = (char*)calloc(sizeof("Logging : ") + strlen(where) + 10, sizeof(char));
+        char* dumpInfo = (char*)calloc(sizeof("Logging : ") + strlen(where) + 50, sizeof(char));
         sprintf(dumpInfo, "%10s: Logging : \"%s\"",(status == LIST_OP_OK)? "[OK]": "[CAUTION]" , where);
 
         this->dumpAll((const char*)dumpInfo);
@@ -630,7 +630,7 @@ public:
      */
     ListOpResult optimize() {
         PERFORM_CHECKS("Optimize setting up");
-        SwiftyList<ListElem>::SwiftyListNode *newStorage = (SwiftyList<ListElem>::SwiftyListNode*)(calloc(this->size + 1, sizeof(SwiftyList<ListElem>::SwiftyListNode)));
+        SwiftyList<ListElem>::SwiftyListNode *newStorage = (SwiftyList<ListElem>::SwiftyListNode*)(calloc(this->size + 2, sizeof(SwiftyList<ListElem>::SwiftyListNode)));
         if (newStorage == nullptr) {
             DUMP_STATUS_REASON(LIST_OP_NOMEM, "optimize no memory");
             return LIST_OP_NOMEM;
@@ -651,6 +651,7 @@ public:
         this->freePtr = 0;
         this->freeSize = 0;
         this->storage = newStorage;
+        this->capacity = this->size;
         PERFORM_CHECKS("Optimize tear down");
         return LIST_OP_OK;
     }
