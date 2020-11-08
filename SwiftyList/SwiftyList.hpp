@@ -12,16 +12,26 @@
 #include <cstdio>
 #include <cstring>
 
-const size_t INITIAL_INCREASE = 16;
-#define PERFORM_CHECKS {if (this->useChecks){ListOpResult resCheck = this->checkUp(); if (resCheck != LIST_OP_OK) return resCheck;}}
 #define DOTPATH "/usr/local/bin/dot"
+
+#define PERFORM_CHECKS(where) {                             \
+if (this->useChecks || this->params->getVerbose() != 0){    \
+    ListOpResult resCheck = this->checkUp();                \
+    this->opDumper(resCheck, where);                        \
+    if (resCheck != LIST_OP_OK)return resCheck;             \
+    }             \
+}
+
+#define DUMP_STATUS_REASON(status, reason) this->opDumper(status, reason)
 
 /**
  * Verbose levels:
  * 0 - No dump at all
- * 1 - Dump only when requested or fail occures
+ * 1 - Dump only when requested or fail occurs
  * 2 - Dump almost all operations
  */
+
+const size_t INITIAL_INCREASE = 16;
 
 enum ListOpResult {
     LIST_OP_OK,
@@ -78,7 +88,8 @@ private:
                 }
             }
             int tmp = 0;
-            this->list->get(node, &tmp);
+            if (this->list->addressValid(node))
+                this->list->get(node, &tmp);
             fprintf(this->file, "</tr><tr><td color=\"darkred\" port=\"f0\" border=\"1\">%zu</td>",
                     this->list->storage[node].previous);
             fprintf(this->file, "<td bgcolor=\"darkblue\" port=\"f1\" border=\"1\">");
@@ -91,7 +102,7 @@ private:
         }
 
         void drawGraphs() {
-            for (size_t i = 0; i <= this->list->size; i++) {
+            for (size_t i = 0; i <= this->list->sumSize(); i++) {
                 if (i == 0) {
                     fprintf(this->file, "node%zu:f2 -> node%zu:f0 [weight = 100, color=darkgreen, constraint=false]\n",
                             i,
@@ -102,6 +113,7 @@ private:
                 } else {
                     fprintf(this->file, "node%zu:f2 -> node%zu:f1 [weight = 100, color=darkgreen]\n",
                             i, this->list->storage[i].next);
+                    if (!(!this->list->storage[i].valid && this->list->storage[i].previous == i))
                     fprintf(this->file, "node%zu:f0 -> node%zu:f1 [weight = 100, color=darkred]\n",
                             i,
                             this->list->storage[i].previous);
@@ -114,6 +126,10 @@ private:
 
         void build(char *imgPath) {
             this->file = fopen(this->filePath, "wb");
+            if (this->file == nullptr){
+                printf("Failed opening file\n");
+                return;
+            }
             fprintf(this->file, "digraph structs {\nnode [shape=none];\nrank=same;\nrankdir=\"LR\";\n");
             this->dumpNodes();
             this->drawGraphs();
@@ -130,16 +146,16 @@ private:
 
     struct SwiftyListNode {
         ListElem value;
-        size_t next;
-        size_t previous;
-        bool   valid;
+        size_t   next;
+        size_t   previous;
+        bool     valid;
     };
 
     struct SwiftyListParams {
     private:
         short int verbose;
-        bool useChecks;
-        FILE *logFile;
+        bool      useChecks;
+        FILE      *logFile;
 
     public:
         SwiftyListParams(short verbose, bool useChecks, FILE *logFile) : verbose(verbose), useChecks(useChecks),
@@ -162,11 +178,13 @@ private:
                 this->freeSize--;
                 this->freePtr = this->storage[newPos].next;
             }
-            this->storage[this->freePtr].valid = false;
+            this->storage[newPos].valid = true;
             return newPos;
         }
-        if (this->reallocate() != LIST_OP_OK)
+        if (this->reallocate() != LIST_OP_OK) {
+            DUMP_STATUS_REASON(LIST_OP_NOMEM, "not enough memory");
             return 0;
+        }
         this->storage[ this->size + 1].valid = true;
         return  this->size + 1;
     }
@@ -192,7 +210,6 @@ private:
         return LIST_OP_OK;
     }
 
-
     size_t logicToPhysic(size_t pos) const {
         if (this->optimized) {
             return pos + 1;
@@ -205,9 +222,9 @@ private:
         }
     }
 
-    char *genRandomStringName(int len) const{
+    char *genRandomStringName(int len) const {
         len += sizeof(".svg");
-        char *tmp_s = (char *) malloc((len + 2) * sizeof(char));
+        char *tmp_s = (char *) calloc((len + 2), sizeof(char));
         static const char alphanum[] =
                 "0123456789"
                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -220,12 +237,10 @@ private:
         return tmp_s;
     }
 
-    bool inline addressValid(size_t pos) const{
-        return this->storage[pos].valid;
-    }
-
     void addFreePos(size_t pos) {
         this->storage[pos].valid = false;
+        this->storage[pos].previous = pos;
+        this->storage[pos].next = pos;
         if (this->freeSize == 0) {
             this->freeSize = 1;
             this->freePtr = pos;
@@ -235,6 +250,21 @@ private:
             this->freePtr = pos;
         }
     }
+
+    void opDumper(ListOpResult status, const char* where) const {
+        if (this->params->getVerbose() == 0)
+            return;
+        if (this->params->getVerbose() == 1 && status == LIST_OP_OK)
+            return;
+        char* dumpInfo = (char*)calloc(sizeof("Logging : ") + strlen(where) + 10, sizeof(char));
+
+        sprintf(dumpInfo, "%10s: Logging : \"%s\"",(status == LIST_OP_OK)? "[OK]": "[CAUTION]" , where);
+
+        this->dumpAll((const char*)dumpInfo);
+
+        free(dumpInfo);
+    }
+
 public:
     SwiftyList(size_t initialSize, short int verbose, FILE *logFile, bool useChecks) :
             optimized(true),
@@ -252,11 +282,15 @@ public:
     }
 
     ListOpResult insertAfter(size_t pos, ListElem value, size_t* physPos=nullptr) {
-        if (pos > this->sumSize())
+        PERFORM_CHECKS("Insert after setting up");
+        if (pos > this->sumSize()) {
+            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "insert pos overflow");
             return LIST_OP_OVERFLOW;
-        if (!this->addressValid(pos) && pos != 0)
+        }
+        if (!this->addressValid(pos) && pos != 0) {
+            DUMP_STATUS_REASON(LIST_OP_SEGFAULT, "insert segmentation fault");
             return LIST_OP_SEGFAULT;
-
+        }
         if (pos != this->storage[0].previous)
             this->optimized = false;
 
@@ -276,28 +310,37 @@ public:
 
         this->size++;
 
+        PERFORM_CHECKS("Insert after tear down")
         return LIST_OP_OK;
     }
 
     ListOpResult insertAfterLogic(size_t pos, ListElem value, size_t* physPos=nullptr) {
-        if (pos > this->size)
+        if (pos > this->size) {
+            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "insertAfterLogic pos overflow");
             return LIST_OP_OVERFLOW;
+        }
         return this->insertAfter(this->logicToPhysic(pos), value, physPos);
     }
 
     ListOpResult insertBefore(size_t pos, ListElem value, size_t* physPos=nullptr) {
-        if (pos > this->sumSize())
+        if (pos > this->sumSize()) {
+            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "insertBefore pos overflow");
             return LIST_OP_OVERFLOW;
-        if (!this->addressValid(pos) && pos != 0)
+        }
+        if (!this->addressValid(pos) && pos != 0) {
+            DUMP_STATUS_REASON(LIST_OP_SEGFAULT, "insertBefore segmentation fault");
             return LIST_OP_SEGFAULT;
+        }
 
         pos = this->storage[pos].previous;
         return this->insertAfter(pos, value, physPos);
     }
 
     ListOpResult insertBeforeLogic(size_t pos, ListElem value, size_t* physPos=nullptr) {
-        if (pos > this->size)
+        if (pos > this->size) {
+            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "insertBeforeLogic pos overflow");
             return LIST_OP_OVERFLOW;
+        }
         return this->insertBefore(this->logicToPhysic(pos), value, physPos);
     }
 
@@ -310,39 +353,54 @@ public:
     }
 
     ListOpResult set(size_t pos, const ListElem value) {
-        PERFORM_CHECKS;
-        if (!this->addressValid(pos))
+        PERFORM_CHECKS("Set setting up");
+        if (!this->addressValid(pos)) {
+            DUMP_STATUS_REASON(LIST_OP_SEGFAULT, "set segmentation fault");
             return LIST_OP_SEGFAULT;
+        }
         this->storage[pos].value = value;
         return LIST_OP_OK;
     }
 
     ListOpResult setLogic(size_t pos, const ListElem value) {
-        if (pos > this->size)
+        if (pos > this->size) {
+            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "setLogic pos overflow");
             return LIST_OP_OVERFLOW;
+        }
         return this->set(this->logicToPhysic(pos), value);
     }
 
     ListOpResult get(size_t pos, ListElem* value) {
-        PERFORM_CHECKS;
-        if (!this->addressValid(pos))
+        if (!this->addressValid(pos)) {
+            DUMP_STATUS_REASON(LIST_OP_SEGFAULT, "get segmentation fault");
             return LIST_OP_SEGFAULT;
+        }
+        if (value == nullptr){
+            DUMP_STATUS_REASON(LIST_OP_SEGFAULT, "get nullptr detected");
+            return LIST_OP_SEGFAULT;
+        }
         *value = this->storage[pos].value;
         return LIST_OP_OK;
     }
 
     ListOpResult getLogic(size_t pos, ListElem* value=nullptr) {
-        if (pos > this->size)
+        if (pos > this->size) {
+            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "getLogic pos overflow");
             return LIST_OP_OVERFLOW;
+        }
         return this->get(this->logicToPhysic(pos), value);
     }
 
     ListOpResult pop(size_t pos, ListElem *value=nullptr) {
-        PERFORM_CHECKS;
-        if (this->size == 0)
+        PERFORM_CHECKS("Pop setting up");
+        if (this->size == 0) {
+            DUMP_STATUS_REASON(LIST_OP_UNDERFLOW, "pop pos underflow");
             return LIST_OP_UNDERFLOW;
-        if (!this->addressValid(pos))
+        }
+        if (!this->addressValid(pos)) {
+            this->opDumper(LIST_OP_SEGFAULT, "pop invalid address");
             return LIST_OP_SEGFAULT;
+        }
 
         if (pos != this->storage[0].previous)
             this->optimized = false;
@@ -356,6 +414,7 @@ public:
         this->addFreePos(pos);
         this->size--;
 
+        PERFORM_CHECKS("Pop tear down");
         return LIST_OP_OK;
     }
 
@@ -376,45 +435,56 @@ public:
     }
 
     ListOpResult removeLogic(size_t pos) {
-        if (pos > this->size)
+        if (pos > this->size) {
+            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "pop pos underflow");
             return LIST_OP_OVERFLOW;
+        }
         return this->pop(this->logicToPhysic(pos), nullptr);
     }
 
     ListOpResult swap(size_t firstPos, size_t secondPos) {
+        PERFORM_CHECKS("Swap setting up");
         if (firstPos == secondPos)
             return LIST_OP_OK;
-        if (!this->addressValid(firstPos) || !this->addressValid(secondPos))
+        if (!this->addressValid(firstPos) || !this->addressValid(secondPos)) {
+            DUMP_STATUS_REASON(LIST_OP_SEGFAULT, "swap segmentation fault");
             return LIST_OP_SEGFAULT;
+        }
 
         ListElem tmp = this->storage[firstPos].value;
         this->storage[firstPos].value = this->storage[secondPos].value;
         this->storage[secondPos].value = tmp;
+        PERFORM_CHECKS("Swap tear down");
         return LIST_OP_OK;
     }
 
     ListOpResult swapLogic(size_t firstPos, size_t secondPos) {
-        if (firstPos > this->size || secondPos > this->size)
+        if (firstPos > this->size || secondPos > this->size) {
+            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "swapLogic pos underflow");
             return LIST_OP_OVERFLOW;
+        }
         return this->swap(this->logicToPhysic(firstPos), this->logicToPhysic(secondPos));
     }
 
     ListOpResult clear() {
-        PERFORM_CHECKS;
+        PERFORM_CHECKS("Clear setting up");
         this->size = 0;
         this->storage[0].next = 0;
         this->storage[0].previous = 0;
         this->freeSize = 0;
         this->freePtr  = 0;
         this->reallocate();
+        PERFORM_CHECKS("Clear tear down");
         return LIST_OP_OK;
     }
 
     ListOpResult optimize() {
-        PERFORM_CHECKS;
+        PERFORM_CHECKS("Optimize setting up");
         SwiftyList<ListElem>::SwiftyListNode *newStorage = (SwiftyList<ListElem>::SwiftyListNode*)(calloc(this->size + 1, sizeof(SwiftyList<ListElem>::SwiftyListNode)));
-        if (newStorage == nullptr)
+        if (newStorage == nullptr) {
+            DUMP_STATUS_REASON(LIST_OP_NOMEM, "optimize no memory");
             return LIST_OP_NOMEM;
+        }
         newStorage[0] = this->storage[0];
         size_t iterator = this->storage[0].next;
         for (size_t i = 0; i < this->size; i++) {
@@ -431,6 +501,7 @@ public:
         this->freePtr = 0;
         this->freeSize = 0;
         this->storage = newStorage;
+        PERFORM_CHECKS("Optimize tear down");
         return LIST_OP_OK;
     }
 
@@ -453,12 +524,31 @@ public:
     }
 
     ListOpResult deOptimize() {
+        PERFORM_CHECKS("Deoptimize setting up");
         this->optimized = false;
         return LIST_OP_OK;
     }
 
+    ListOpResult resize(size_t elemNumbers) {
+        PERFORM_CHECKS("Resize setting up");
+        if (elemNumbers < this->sumSize())
+            elemNumbers = this->sumSize();
+        elemNumbers++;
+        ListElem *newStorage = calloc(elemNumbers, sizeof(ListElem));
+        if (newStorage == nullptr)
+            return LIST_OP_NOMEM;
+        this->storage = newStorage;
+        this->capacity = elemNumbers - 1;
+        PERFORM_CHECKS("Resize tear down");
+        return LIST_OP_OK;
+    }
+
+    ListOpResult shrinkToFit() {
+        return this->resize(0);
+    }
+
     ListOpResult search(size_t *pos, const ListElem value) const{
-        PERFORM_CHECKS;
+        PERFORM_CHECKS("Search setting up");
         if (this->size == 0) {
             return LIST_OP_NOTFOUND;
         }
@@ -473,13 +563,16 @@ public:
                 break;
             *pos = this->storage[*pos].next;
         }
+        PERFORM_CHECKS("Search tear down");
         return LIST_OP_NOTFOUND;
     }
 
     void dumpAll(const char* sectionName) const{
-        this->setNewSection(sectionName);
-        this->dumpData();
-        this->dumpImage();
+        if (this->params->getLogFile() != NULL) {
+            this->setNewSection(sectionName);
+            this->dumpData();
+            this->dumpImage();
+        }
     }
 
     void dumpData() const{
@@ -538,6 +631,10 @@ public:
 
     size_t sumSize() const{
         return this->size + this->freeSize;
+    }
+
+    bool addressValid(size_t pos) const {
+        return this->storage[pos].valid;
     }
 };
 

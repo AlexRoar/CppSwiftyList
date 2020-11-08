@@ -8,7 +8,7 @@ double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;\
 printf("ELAPSED: %lf sec\n", elapsed_secs);}
 
 int main() {
-    SwiftyList<int> list(0, 2, fopen("graphLog.html", "w"), false);
+    SwiftyList<int> list(0, 1, fopen("graphLog.html", "w"), false);
 
     for (size_t i = 0; i < 10; i++) {
         if (i % 2 == 1)
@@ -19,6 +19,31 @@ int main() {
     list.dumpAll("Pushed elements");
     list.optimize();
     list.dumpAll("Optimized");
+
+    list.remove(1);
+    list.remove(5);
+    list.remove(8);
+
+    list.dumpAll("Removed some elements");
+
+    list.remove(8);
+    list.remove(5);
+
+    int tmp = 4;
+    list.get(5, &tmp);
+    list.set(5, tmp);
+
+    list.dumpAll("Tried accessing invalid elements");
+
+    list.pushBack(101);
+    list.pushBack(102);
+
+    list.dumpAll("Pushed some elements");
+
+    list.pushBack(103);
+    list.pushBack(104);
+
+    list.dumpAll("Even more");
 
     return 0;
 }
