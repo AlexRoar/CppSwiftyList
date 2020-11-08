@@ -650,6 +650,7 @@ public:
         this->optimized = true;
         this->freePtr = 0;
         this->freeSize = 0;
+        free(this->storage);
         this->storage = newStorage;
         this->capacity = this->size;
         PERFORM_CHECKS("Optimize tear down");
