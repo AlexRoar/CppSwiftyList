@@ -6,7 +6,7 @@
  * 1 - Dump only when requested or fail occurs
  * 2 - Dump almost all operations
  *
- * Created by Александр Дремов on 30.10.2020.
+ * Created by Aleksandr Dremov on 30.10.2020.
  */
 
 #ifndef SwiftyList_hpp
@@ -21,7 +21,7 @@
 if (this->useChecks || this->params->getVerbose() != 0){    \
     ListOpResult resCheck = this->checkUp();                \
     this->opDumper(resCheck, where);                        \
-    if (resCheck != LIST_OP_OK)return resCheck;             \
+    if (resCheck != LIST_OP_OK) return resCheck;            \
     }                                                       \
 }
 
@@ -334,7 +334,7 @@ public:
             return LIST_OP_NOMEM;
 
         if (physPos != nullptr)
-            *physPos = newPos;
+            *physPos = newPos; // TODO: consider phy
 
         this->storage[newPos].value = value;
         this->storage[newPos].previous = pos;
@@ -457,7 +457,7 @@ public:
      * @return operation result
      */
     ListOpResult get(size_t pos, ListElem* value) {
-        if (!this->addressValid(pos)) {
+        if (!this->storage[pos].valid) {
             DUMP_STATUS_REASON(LIST_OP_SEGFAULT, "get segmentation fault");
             return LIST_OP_SEGFAULT;
         }
@@ -653,6 +653,28 @@ public:
     }
 
     /**
+     * Moves iterator to the next physical position
+     * @param pos
+     * @return
+     */
+    ListOpResult nextIterator(size_t* pos) {
+        if (!this->addressValid(*pos))
+            return LIST_OP_SEGFAULT;
+        *pos =  this->storage[*pos].next;
+    }
+
+    /**
+    * Moves iterator to the previous physical position
+    * @param pos
+    * @return
+    */
+    ListOpResult prevIterator(size_t* pos) {
+        if (!this->addressValid(*pos))
+            return LIST_OP_SEGFAULT;
+        *pos =  this->storage[*pos].next;
+    }
+
+    /**
      * Check up list's integrity
      * @return operation result
      */
@@ -759,18 +781,19 @@ public:
         if (logFile == NULL) return;
 
         fprintf(logFile, "SwiftyList [%p] {\n", this);
-        fprintf(logFile, "\tstorage  :  %p\n",  this->storage);
-        fprintf(logFile, "\tcapacity :  %zu\n", this->capacity);
-        fprintf(logFile, "\tsize     :  %zu\n", this->size);
-        fprintf(logFile, "\tfreeSize :  %zu\n", this->freeSize);
-        fprintf(logFile, "\tsumSize  :  %zu\n", this->sumSize());
-        fprintf(logFile, "\thead     :  %zu\n", this->storage[0].next);
-        fprintf(logFile, "\ttail     :  %zu\n", this->storage[0].previous);
-        fprintf(logFile, "\toptimized:  %d\n", this->optimized);
-        fprintf(logFile, "\tuseChecks:  %d\n", this->useChecks);
-        fprintf(logFile, "\tvalid    :  %s\n", (this->checkUp() == LIST_OP_OK)? "YES": "NO");
+        fprintf(logFile, "\tstorage    :  [%p]\n",  this->storage);
+        fprintf(logFile, "\tcapacity   :  %zu\n", this->capacity);
+        fprintf(logFile, "\tsize       :  %zu\n", this->size);
+        fprintf(logFile, "\tfreeSize   :  %zu\n", this->freeSize);
+        fprintf(logFile, "\tsumSize    :  %zu\n", this->sumSize());
+        fprintf(logFile, "\toptimized  :  %d\n", this->optimized);
+        fprintf(logFile, "\tuseChecks  :  %d\n", this->useChecks);
+        fprintf(logFile, "\tvalid      :  %s\n", (this->checkUp() == LIST_OP_OK)? "YES": "NO");
+        fprintf(logFile, "\tfictive {\n");
+        fprintf(logFile, "\t      head :  %zu\n", this->storage[0].next);
+        fprintf(logFile, "\t      tail :  %zu\n", this->storage[0].previous);
+        fprintf(logFile, "\t}\n");
         fprintf(logFile, "}\n");
-
         fprintf(logFile, "\n</code></pre>\n");
     }
 
