@@ -228,21 +228,6 @@ private:
     }
 
     /**
-     * Convert logic position to the physic one
-     */
-    size_t logicToPhysic(size_t pos) const {
-        if (this->optimized) {
-            return pos + 1;
-        } else {
-            size_t iterator = 0;
-            for (size_t i = 0; i <= pos; i++) {
-                iterator = this->storage[iterator].next;
-            }
-            return iterator;
-        }
-    }
-
-    /**
      * Generates random image name
      */
     char* genRandomImageName(int len) const {
@@ -310,6 +295,21 @@ public:
     }
 
     /**
+    * Convert logic position to the physic one
+    */
+    size_t logicToPhysic(size_t pos) const {
+        if (this->optimized) {
+            return pos + 1;
+        } else {
+            size_t iterator = 0;
+            for (size_t i = 0; i <= pos; i++) {
+                iterator = this->storage[iterator].next;
+            }
+            return iterator;
+        }
+    }
+
+    /**
      * Insert an element after pos
      * @param pos - physical pos of considered element
      * @param value - value to be inserted
@@ -350,21 +350,6 @@ public:
     }
 
     /**
-     * Insert an element after pos
-     * @param pos - logical pos of considered element
-     * @param value - value to be inserted
-     * @param physPos - physical position of inserted element
-     * @return operation result
-     */
-    ListOpResult insertAfterLogic(size_t pos, ListElem value, size_t* physPos=nullptr) {
-        if (pos > this->size) {
-            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "insertAfterLogic pos overflow");
-            return LIST_OP_OVERFLOW;
-        }
-        return this->insertAfter(this->logicToPhysic(pos), value, physPos);
-    }
-
-    /**
      * Insert an element before pos
      * @param pos - physical pos of considered element
      * @param value - value to be inserted
@@ -383,21 +368,6 @@ public:
 
         pos = this->storage[pos].previous;
         return this->insertAfter(pos, value, physPos);
-    }
-
-    /**
-     * Insert an element before pos
-     * @param pos - logical pos of considered element
-     * @param value - value to be inserted
-     * @param physPos - physical position of inserted element
-     * @return operation result
-     */
-    ListOpResult insertBeforeLogic(size_t pos, ListElem value, size_t* physPos=nullptr) {
-        if (pos > this->size) {
-            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "insertBeforeLogic pos overflow");
-            return LIST_OP_OVERFLOW;
-        }
-        return this->insertBefore(this->logicToPhysic(pos), value, physPos);
     }
 
     /**
@@ -437,20 +407,6 @@ public:
     }
 
     /**
-     * Set an element at the logical position pos to the new value
-     * @param pos - logical pos of considered element
-     * @param value - new value
-     * @return operation result
-     */
-    ListOpResult setLogic(size_t pos, const ListElem value) {
-        if (pos > this->size) {
-            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "setLogic pos overflow");
-            return LIST_OP_OVERFLOW;
-        }
-        return this->set(this->logicToPhysic(pos), value);
-    }
-
-    /**
      * Get an element at the physical position pos
      * @param pos - physical pos of considered element
      * @param value - retrieved value
@@ -467,20 +423,6 @@ public:
         }
         *value = this->storage[pos].value;
         return LIST_OP_OK;
-    }
-
-    /**
-     * Get an element at the logical position pos
-     * @param pos - logical pos of considered element
-     * @param value - retrieved value
-     * @return operation result
-     */
-    ListOpResult getLogic(size_t pos, ListElem* value=nullptr) {
-        if (pos > this->size) {
-            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "getLogic pos overflow");
-            return LIST_OP_OVERFLOW;
-        }
-        return this->get(this->logicToPhysic(pos), value);
     }
 
     /**
@@ -535,35 +477,12 @@ public:
     }
 
     /**
-     * Retrieve an element at the logical position pos and remove it
-     * @param pos - logical pos of considered element
-     * @param value - retrieved value
-     * @return operation result
-     */
-    ListOpResult popLogic(size_t pos, ListElem *value) {
-        return this->pop(this->logicToPhysic(pos), value);
-    }
-
-    /**
      * Remove an element at the physical position pos
      * @param pos - physical pos of considered element
      * @return operation result
      */
     ListOpResult remove(size_t pos) {
         return this->pop(pos, nullptr);
-    }
-
-    /**
-     * Remove an element at the logical position pos
-     * @param pos - logical pos of considered element
-     * @return operation result
-     */
-    ListOpResult removeLogic(size_t pos) {
-        if (pos > this->size) {
-            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "pop pos underflow");
-            return LIST_OP_OVERFLOW;
-        }
-        return this->pop(this->logicToPhysic(pos), nullptr);
     }
 
     /**
@@ -586,20 +505,6 @@ public:
         this->storage[secondPos].value = tmp;
         PERFORM_CHECKS("Swap tear down");
         return LIST_OP_OK;
-    }
-
-    /**
-     * Swap two elements at the logical positions
-     * @param firstPos - logical pos of the first element
-     * @param secondPos - logical pos of the second element
-     * @return operation result
-     */
-    ListOpResult swapLogic(size_t firstPos, size_t secondPos) {
-        if (firstPos > this->size || secondPos > this->size) {
-            DUMP_STATUS_REASON(LIST_OP_OVERFLOW, "swapLogic pos underflow");
-            return LIST_OP_OVERFLOW;
-        }
-        return this->swap(this->logicToPhysic(firstPos), this->logicToPhysic(secondPos));
     }
 
     /**
@@ -741,7 +646,7 @@ public:
      * @param value - searched value
      * @return operation result
      */
-    ListOpResult search(size_t *pos, const ListElem value) const{
+    ListOpResult searchLinear(size_t *pos, const ListElem value) const{
         PERFORM_CHECKS("Search setting up");
         if (this->size == 0) {
             return LIST_OP_NOTFOUND;
