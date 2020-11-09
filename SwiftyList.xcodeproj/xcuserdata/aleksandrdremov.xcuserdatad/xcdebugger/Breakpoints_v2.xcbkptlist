@@ -126,7 +126,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "201"
             endingLineNumber = "201"
-            landmarkName = "getFreePos()"
+            landmarkName = "SwiftyListParams(verbose, useChecks, logFile)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -142,7 +142,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "633"
             endingLineNumber = "633"
-            landmarkName = "optimize()"
+            landmarkName = "checkUp()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

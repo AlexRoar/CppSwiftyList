@@ -71,6 +71,25 @@ private:
             for (size_t i = 0; i <= this->list->sumSize(); i++) {
                 this->dumpNode(i);
             }
+            for (size_t i = 0; i <= this->list->sumSize(); i++) {
+                int tmp = 0;
+                if (this->list->addressValid(i))
+                    this->list->get(i, &tmp);
+                fprintf(this->file, "nodePhysic%zu [label=<<table border=\"0\" cellspacing=\"0\"><tr>", i);
+                if (i == 0){
+                    fprintf(this->file, "<td bgcolor=\"lightyellow\" border=\"1\" colspan=\"3\">h+t</td>");
+                }else {
+                    if (!this->list->storage[i].valid)
+                        fprintf(this->file, "<td bgcolor=\"green\" border=\"1\" colspan=\"3\">%zu</td>", i);
+                    else
+                        fprintf(this->file, "<td bgcolor=\"pink\" border=\"1\" colspan=\"3\">%zu</td>", i);
+                }
+                fprintf(this->file, "</tr><tr>"
+                                    "<td border=\"1\" port=\"f1\">%zu</td><td bgcolor=\"darkblue\" port=\"f0\" border=\"1\"><font color=\"white\">%d</font></td><td port=\"f2\" border=\"1\">%zu</td>"
+                                    "</tr></table>>]\n", this->list->storage[i].previous, tmp, this->list->storage[i].next);
+                if (i != this->list->sumSize())
+                    fprintf(this->file, "nodePhysic%zu -> nodePhysic%zu [style=invis]", i, i + 1);
+            }
         }
 
         /**
@@ -111,16 +130,28 @@ private:
                     fprintf(this->file, "node%zu:f2 -> node%zu:f0 [weight = 100, color=darkgreen, constraint=false]\n",
                             i,
                             this->list->storage[i].next);
+                    fprintf(this->file, "nodePhysic%zu:f0 -> nodePhysic%zu:f0 [weight = 100, color=darkgreen, constraint=false]\n",
+                            i,
+                            this->list->storage[i].next);
                     fprintf(this->file, "node%zu:f0h -> node%zu:f0h [weight = 100, color=darkred, constraint=false]\n",
+                            i,
+                            this->list->storage[i].previous);
+                    fprintf(this->file, "nodePhysic%zu:f0 -> nodePhysic%zu:f0 [weight = 100, color=darkred, constraint=false]\n",
                             i,
                             this->list->storage[i].previous);
                 } else {
                     fprintf(this->file, "node%zu:f2 -> node%zu:f1 [weight = 100, color=darkgreen]\n",
                             i, this->list->storage[i].next);
-                    if (!(!this->list->storage[i].valid && this->list->storage[i].previous == i))
-                    fprintf(this->file, "node%zu:f0 -> node%zu:f1 [weight = 100, color=darkred]\n",
-                            i,
-                            this->list->storage[i].previous);
+                    fprintf(this->file, "nodePhysic%zu:f0 -> nodePhysic%zu:f1 [color=darkgreen, constraint=false]\n",
+                            i, this->list->storage[i].next);
+                    if (!(!this->list->storage[i].valid && this->list->storage[i].previous == i)) {
+                        fprintf(this->file, "node%zu:f0 -> node%zu:f1 [weight = 100, color=darkred]\n",
+                                i,
+                                this->list->storage[i].previous);
+                        fprintf(this->file, "nodePhysic%zu:f0 -> nodePhysic%zu:f2 [color=darkred, constraint=false]\n",
+                                i,
+                                this->list->storage[i].previous);
+                    }
                 }
             }
         }
@@ -667,7 +698,7 @@ public:
     }
 
     /**
-     * Dump all informaton as new section
+     * Dump all information as new section
      */
     void dumpAll(const char* sectionName) const{
         if (this->params->getLogFile() != NULL) {

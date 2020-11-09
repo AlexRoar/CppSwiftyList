@@ -8,7 +8,8 @@ const size_t stressElements = 10;
 #define TIME_LIMIT(sec) if (double(clock() - begin) / CLOCKS_PER_SEC > sec) {printf("\tReached time limit! "); break;}
 
 int main() {
-    SwiftyList<int> list(20, 1, fopen("graphLog.html", "w"), false);
+    FILE* file = fopen("graphLog.html", "w");
+    SwiftyList<int> list(20, 1, file, false);
 
     for (size_t i = 0; i < 10; i++) {
         if (i % 2 == 1)
@@ -20,8 +21,6 @@ int main() {
     list.optimize();
     list.dumpAll("Optimized");
 
-    // TODO: do not trust users
-    // TODO: ? prefix I_AM__SLOOOOOW_____remove(pos)
     list.remove(1);
     list.remove(5);
     list.remove(8);
@@ -51,13 +50,28 @@ int main() {
 
     list.dumpAll("Cleared");
 
-    list.pushBack(103);
-    list.pushBack(104);
+    size_t iterator = 0;
+    list.pushBack(100);
+    list.pushBack(102);
+    list.pushBack(104, &iterator);
+    list.pushBack(106);
+    list.pushBack(108);
+    list.pushBack(110);
 
     list.dumpAll("Pushed again");
+
+    for (size_t i = 10; i > 0; --i) {
+        if (i % 2 == 1)
+            list.insertAfter(iterator, (int)i);
+        else
+            list.insertBefore(iterator, (int)i);
+    }
+
+    fprintf(file, "<pre>Around: %zu</pre>\n", iterator);
+    list.dumpAll("Middle insertions around");
     
     list.destructList();
-    list = SwiftyList<int> (20, 0, fopen("graphLog.html", "w"), false);
+    list = SwiftyList<int> (20, 0, file, false);
 
     printf("Pushing %zu elements...\n", stressElements);
     TIME_MEASURED({
@@ -86,8 +100,9 @@ int main() {
                       for (size_t i = 0; i < stressElements; i++) {
                           TIME_LIMIT(8)
                           int tmp = 0;
-                          list.getLogic(i, &tmp);
-                          list.setLogic(i, tmp);
+                          size_t it = list.logicToPhysic(i);
+                          list.get(it, &tmp);
+                          list.set(it, tmp);
                       }
                   })
 
@@ -112,11 +127,12 @@ int main() {
                       for (size_t i = 0; i < stressElements; i++) {
                           TIME_LIMIT(8)
                           int tmp = 0;
-                          list.getLogic(i, &tmp);
-                          list.setLogic(i, tmp);
+                          size_t it = list.logicToPhysic(i);
+                          list.get(it, &tmp);
+                          list.set(it, tmp);
                       }
                   })
 
-
+    fclose(file);
     return 0;
 }
