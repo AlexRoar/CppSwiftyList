@@ -262,17 +262,9 @@ private:
      * Generates random image name
      */
     char* genRandomImageName(int len) const {
-        len += sizeof(".svg");
-        char *tmp_s = (char *) calloc((len + 10), sizeof(char));
-        static const char alphanum[] =
-                "0123456789"
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "abcdefghijklmnopqrstuvwxyz";
-
-        int i = 0;
-        for (; i < len - sizeof(".svg"); ++i)
-            tmp_s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
-        strcpy(tmp_s + i, ".svg");
+        static size_t imgNo = 0;
+        char *tmp_s = (char *) calloc(100, sizeof(char));
+        sprintf(tmp_s, "%zu.svg", imgNo++);
         return tmp_s;
     }
 

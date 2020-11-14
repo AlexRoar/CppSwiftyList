@@ -2,10 +2,18 @@
 #include <ctime>
 
 #include "SwiftyList.hpp"
-const size_t stressElements = 10;
+const size_t stressElements = 10e5;
 
-#define TIME_MEASURED(code){clock_t begin = clock();code;clock_t end = clock(); double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC; printf("ELAPSED: %lf sec\n", elapsed_secs);}
+#define TIME_MEASURED(code){size_t op_Counter = 0; clock_t begin = clock(); \
+code;                                                                       \
+clock_t end = clock(); \
+double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;                                            \
+printf("ELAPSED: %lf sec, %lf op/sec\n\n", elapsed_secs, \
+double(op_Counter)/(elapsed_secs + 0.1));}
+
 #define TIME_LIMIT(sec) if (double(clock() - begin) / CLOCKS_PER_SEC > sec) {printf("\tReached time limit! "); break;}
+#define OPERATION_COUNTER op_Counter++
+
 
 int main() {
     FILE* file = fopen("graphLog.html", "w");
@@ -77,6 +85,7 @@ int main() {
     TIME_MEASURED({
                       for (size_t i = 0; i < stressElements; i++) {
                           TIME_LIMIT(8)
+                          OPERATION_COUNTER;
                           if (i % 2 == 1)
                               list.pushBack((int)i);
                           else
@@ -87,9 +96,11 @@ int main() {
     printf("Physic access on %zu elements...\n", stressElements);
     TIME_MEASURED({
                       for (size_t i = 1; i <= stressElements; i++) {
-                          TIME_LIMIT(8) // TODO: time limit + counter
+                          TIME_LIMIT(8)
                           int tmp = 0;
+                          OPERATION_COUNTER;
                           list.get(i, &tmp);
+                          OPERATION_COUNTER;
                           list.set(i, tmp);
                       }
                   })
@@ -101,13 +112,16 @@ int main() {
                           TIME_LIMIT(8)
                           int tmp = 0;
                           size_t it = list.logicToPhysic(i);
+                          OPERATION_COUNTER;
                           list.get(it, &tmp);
+                          OPERATION_COUNTER;
                           list.set(it, tmp);
                       }
                   })
 
     printf("Optimization...\n");
     TIME_MEASURED({
+                      OPERATION_COUNTER;
                       list.optimize();
                   })
 
@@ -116,7 +130,9 @@ int main() {
                       for (size_t i = 1; i <= stressElements; i++) {
                           TIME_LIMIT(8)
                           int tmp = 0;
+                          OPERATION_COUNTER;
                           list.get(i, &tmp);
+                          OPERATION_COUNTER;
                           list.set(i, tmp);
                       }
                   })
@@ -128,7 +144,9 @@ int main() {
                           TIME_LIMIT(8)
                           int tmp = 0;
                           size_t it = list.logicToPhysic(i);
+                          OPERATION_COUNTER;
                           list.get(it, &tmp);
+                          OPERATION_COUNTER;
                           list.set(it, tmp);
                       }
                   })
