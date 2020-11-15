@@ -606,6 +606,17 @@ public:
     }
 
     /**
+     * Moves iterator to the next physical position
+     * @param pos
+     * @return
+     */
+    ListOpResult prevIterator(size_t* pos) {
+        if (!this->addressValid(*pos))
+            return LIST_OP_SEGFAULT;
+        *pos =  this->storage[*pos].previous;
+    }
+
+    /**
      * Check up list's integrity
      * @return operation result
      */
