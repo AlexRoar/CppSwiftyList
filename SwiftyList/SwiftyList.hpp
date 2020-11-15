@@ -64,91 +64,13 @@ private:
         char *filePath;
         SwiftyList<ListElem> *list;
 
-        /**
-         * Calls dumpNode() for every node in the list
-         */
-        void dumpNodes() {
-            for (size_t i = 0; i <= this->list->sumSize(); i++) {
-                this->dumpNode(i);
-            }
-        }
-
-        /**
-         * Dump node in graphviz format
-         */
-        void dumpNode(size_t node) {
-            fprintf(this->file, "node%zu [label=", node);
-            fprintf(this->file, "<<table border=\"0\" cellspacing=\"0\"><tr>");
-            if (node == 0) {
-                fprintf(this->file, "<td colspan=\"3\" bgcolor=\"lightyellow\" port=\"f0h\" border=\"1\">h+t</td>");
-            } else {
-                if ( this->list->storage[node].valid){
-                    fprintf(this->file, "<td colspan=\"3\" bgcolor=\"pink\" port=\"f0h\" border=\"1\">%zu</td>", node);
-                } else {
-                    fprintf(this->file, "<td colspan=\"3\" bgcolor=\"green\" port=\"f0h\" border=\"1\">%zu</td>", node);
-                }
-            }
-            int tmp = 0;
-            if (this->list->addressValid(node))
-                this->list->get(node, &tmp);
-            fprintf(this->file, "</tr><tr><td color=\"darkred\" port=\"f0\" border=\"1\">%zu</td>",
-                    this->list->storage[node].previous);
-            fprintf(this->file, "<td bgcolor=\"darkblue\" port=\"f1\" border=\"1\">");
-            fprintf(this->file, "<font color=\"white\">%d</font></td>"
-                                "<td color=\"darkgreen\" port=\"f2\" border=\"1\">%zu</td>"
-                                "</tr></table>>",
-                    this->list->storage[node].value,
-                    this->list->storage[node].next);
-            fprintf(this->file, "];\n");
-        }
-
-        /**
-         * Define links between nodes
-         */
-        void drawGraphs() {
-            for (size_t i = 0; i <= this->list->sumSize(); i++) {
-                if (i == 0) {
-                    fprintf(this->file, "node%zu:f2 -> node%zu:f0 [weight = 100, color=darkgreen, constraint=false]\n",
-                            i,
-                            this->list->storage[i].next);
-                    fprintf(this->file, "node%zu:f0h -> node%zu:f0h [weight = 100, color=darkred, constraint=false]\n",
-                            i,
-                            this->list->storage[i].previous);
-                } else {
-                    fprintf(this->file, "node%zu:f2 -> node%zu:f1 [weight = 100, color=darkgreen]\n",
-                            i, this->list->storage[i].next);
-                    if (!(!this->list->storage[i].valid && this->list->storage[i].previous == i))
-                    fprintf(this->file, "node%zu:f0 -> node%zu:f1 [weight = 100, color=darkred]\n",
-                            i,
-                            this->list->storage[i].previous);
-                }
-            }
-        }
-
     public:
         ListGraphDumper(SwiftyList<ListElem> *list, char *filePath) : filePath(filePath), list(list), file(nullptr) {}
 
         /**
          * Generate graph image
          */
-        void build(char *imgPath) {
-            this->file = fopen(this->filePath, "wb");
-            if (this->file == nullptr){
-                printf("Failed opening file\n");
-                return;
-            }
-            fprintf(this->file, "digraph structs {\nnode [shape=none];\nrank=same;\nrankdir=\"LR\";\n");
-            this->dumpNodes();
-            this->drawGraphs();
-            fprintf(this->file, "\n}\n");
-            fflush(this->file);
-            const char *command = DOTPATH " -Tsvg %s -o %s";
-            char *compiledCommand = (char *) calloc(strlen(command) + strlen(imgPath) + strlen(this->filePath) + 3, 1);
-            sprintf(compiledCommand, command, this->filePath, imgPath);
-            system(compiledCommand);
-            fclose(this->file);
-            free(compiledCommand);
-        }
+        void build(char *imgPath) { }
         
         ~ListGraphDumper(){}
     };
@@ -228,21 +150,6 @@ private:
     }
 
     /**
-     * Convert logic position to the physic one
-     */
-    size_t logicToPhysic(size_t pos) const {
-        if (this->optimized) {
-            return pos + 1;
-        } else {
-            size_t iterator = 0;
-            for (size_t i = 0; i <= pos; i++) {
-                iterator = this->storage[iterator].next;
-            }
-            return iterator;
-        }
-    }
-
-    /**
      * Generates random image name
      */
     char* genRandomImageName(int len) const {
@@ -288,8 +195,6 @@ private:
         char* dumpInfo = (char*)calloc(sizeof("Logging : ") + strlen(where) + 50, sizeof(char));
         sprintf(dumpInfo, "%10s: Logging : \"%s\"",(status == LIST_OP_OK)? "[OK]": "[CAUTION]" , where);
 
-        this->dumpAll((const char*)dumpInfo);
-
         free(dumpInfo);
     }
 
@@ -307,6 +212,21 @@ public:
         this->storage[0].next = 0;
         this->storage[0].previous = 0;
         this->storage[0].valid = false;
+    }
+
+    /**
+     * Convert logic position to the physic one
+     */
+    size_t logicToPhysic(size_t pos) const {
+        if (this->optimized) {
+            return pos + 1;
+        } else {
+            size_t iterator = 0;
+            for (size_t i = 0; i <= pos; i++) {
+                iterator = this->storage[iterator].next;
+            }
+            return iterator;
+        }
     }
 
     /**
@@ -664,14 +584,25 @@ public:
     }
 
     /**
-    * Moves iterator to the previous physical position
-    * @param pos
-    * @return
-    */
-    ListOpResult prevIterator(size_t* pos) {
-        if (!this->addressValid(*pos))
-            return LIST_OP_SEGFAULT;
-        *pos =  this->storage[*pos].next;
+     * Moves iterator to the next physical position
+     * @param pos
+     * @return
+     */
+    size_t nextIterator(size_t pos) {
+        if (!this->addressValid(pos))
+            return 0;
+        return this->storage[pos].next;
+    }
+
+    /**
+     * Moves iterator to the next physical position
+     * @param pos
+     * @return
+     */
+    size_t prevIterator(size_t pos) {
+        if (!this->addressValid(pos))
+            return 0;
+        return this->storage[pos].previous;
     }
 
     /**
@@ -813,6 +744,14 @@ public:
         this->dumper->build(name);
         if (this->params->getLogFile() != NULL) fprintf(this->params->getLogFile(), "<img src=\"%s\">\n", name);
         free(name);
+    }
+
+    size_t begin() const {
+        return this->storage[0].next;
+    }
+
+    size_t end() const {
+        return this->storage[0].previous;
     }
 
     size_t getSize() const {
