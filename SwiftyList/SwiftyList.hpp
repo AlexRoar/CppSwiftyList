@@ -228,6 +228,7 @@ public:
         thou->storage[0].next = 0;
         thou->storage[0].previous = 0;
         thou->storage[0].valid = false;
+        return thou;
     }
 
     /**
