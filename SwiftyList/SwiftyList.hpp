@@ -91,13 +91,13 @@ private:
     public:
         SwiftyListParams(short verbose, bool useChecks, FILE *logFile) : verbose(verbose), useChecks(useChecks),
                                                                          logFile(logFile) {}
-        short int getVerbose() const {
+        [[nodiscard]] short int getVerbose() const {
             return this->verbose;
         }
-        bool getChecks() const {
+        [[nodiscard]] bool getChecks() const {
             return this->useChecks;
         }
-        FILE *getLogFile() const {
+        [[nodiscard]] FILE *getLogFile() const {
             return this->logFile;
         }
     };
@@ -212,6 +212,22 @@ public:
         this->storage[0].next = 0;
         this->storage[0].previous = 0;
         this->storage[0].valid = false;
+    }
+
+    static SwiftyList<ListElem>* CreateNovel (size_t initialSize, short int verbose, FILE *logFile, bool useChecks) {
+        auto* thou = static_cast<SwiftyList<ListElem>*>(calloc(1, sizeof(SwiftyList<ListElem>)));
+        thou->freePtr = 0;
+        thou->freeSize = 0;
+        thou->useChecks = useChecks;
+        thou->size = 0;
+        thou->capacity = initialSize;
+        thou->optimized = true;
+        thou->storage = (SwiftyListNode *) calloc(initialSize + 1, sizeof(SwiftyListNode));
+        thou->params = new SwiftyListParams(verbose, useChecks, logFile);
+        thou->dumper = new SwiftyList::ListGraphDumper(thou, (char*)"tmp.gv");
+        thou->storage[0].next = 0;
+        thou->storage[0].previous = 0;
+        thou->storage[0].valid = false;
     }
 
     /**
@@ -793,11 +809,11 @@ public:
         return this->storage[pos].valid;
     }
     
-    void destructList(){
+    void DestructList(){
+        delete this->params;
+        delete this->dumper;
         free(this->storage);
     }
-    
-    ~SwiftyList() {}
 };
 
 

@@ -55,8 +55,8 @@ int main() {
     list.pushBack(104);
 
     list.dumpAll("Pushed again");
-    
-    list.destructList();
+
+    list.DestructList();
     list = SwiftyList<int> (20, 0, fopen("graphLog.html", "w"), false);
 
     printf("Pushing %zu elements...\n", stressElements);
