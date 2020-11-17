@@ -597,6 +597,7 @@ public:
         if (!this->addressValid(*pos))
             return LIST_OP_SEGFAULT;
         *pos =  this->storage[*pos].next;
+        return LIST_OP_OK;
     }
 
     /**
@@ -630,6 +631,7 @@ public:
         if (!this->addressValid(*pos))
             return LIST_OP_SEGFAULT;
         *pos =  this->storage[*pos].previous;
+        return LIST_OP_OK;
     }
 
     /**
