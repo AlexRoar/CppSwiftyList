@@ -702,7 +702,7 @@ public:
      * @param value - searched value
      * @return operation result
      */
-    ListOpResult search(size_t *pos, const ListElem value) const{
+    ListOpResult searchLogic(size_t *pos, const ListElem value) const{
         PERFORM_CHECKS("Search setting up");
         if (this->size == 0) {
             return LIST_OP_NOTFOUND;
@@ -711,6 +711,31 @@ public:
         while (true) {
             if (this->storage[*pos].value == value) {
                 (*pos)--;
+                return LIST_OP_OK;
+            }
+
+            if (*pos == this->storage[0].previous)
+                break;
+            *pos = this->storage[*pos].next;
+        }
+        PERFORM_CHECKS("Search tear down");
+        return LIST_OP_NOTFOUND;
+    }
+
+    /**
+     * Search an element in the list. Retrieves the physic position
+     * @param pos - physic pos of considered element
+     * @param value - searched value
+     * @return operation result
+     */
+    ListOpResult search(size_t *pos, const ListElem value) const{
+        PERFORM_CHECKS("Search setting up");
+        if (this->size == 0) {
+            return LIST_OP_NOTFOUND;
+        }
+        *pos = this->storage[0].next;
+        while (*pos != 0) {
+            if (this->storage[*pos].value == value) {
                 return LIST_OP_OK;
             }
 

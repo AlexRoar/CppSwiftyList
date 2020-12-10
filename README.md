@@ -10,7 +10,7 @@ If the list is optimized, then operations can be divided in two parts:
 - popBack
 - set
 - get
-- search
+- searchLogic
 - remove
 - resize
 - swap
@@ -36,7 +36,7 @@ In de-optimized mode linear complexity in several operations appear.
 | pushBack       |    O(1)   |      O(1)     |
 | popFront       |    O(1)   |      O(1)     |
 | popBack        |    O(1)   |      O(1)     |
-| search         |    O(n)   |      O(n)     |
+| searchLogic         |    O(n)   |      O(n)     |
 | remove         |    O(1)   |      O(n)     |
 | resize         |    O(1)   |      O(1)     |
 | swap           |    O(1)   |      O(n)     |

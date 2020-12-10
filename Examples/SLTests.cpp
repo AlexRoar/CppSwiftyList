@@ -154,7 +154,7 @@ TEST(SwiftyListTests, setGetPhysic) {
     }
 }
 
-TEST(SwiftyListTests, search) {
+TEST(SwiftyListTests, searchLogic) {
     for (size_t testSize = 0; testSize < CAPACITY_RANGE; testSize++) {
         SwiftyList<int> list(0, 0, nullptr, false);
         for (size_t i = 0; i < testSize; i++) {
@@ -163,7 +163,7 @@ TEST(SwiftyListTests, search) {
         EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
         for (size_t i = 0; i < testSize; i++) {
             size_t pos = 0;
-            list.search(&pos, 2 * i);
+            list.searchLogic(&pos, 2 * i);
             EXPECT_EQ(pos, i);
         }
         EXPECT_TRUE(list.checkUp() == LIST_OP_OK);
